@@ -1,0 +1,56 @@
+### Build output ###
+target/
+dist/
+build/
+out/
+
+### Dependencies ###
+node_modules/
+
+### IDE ###
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+### Local history ###
+.history/
+
+### Environment config (privacy) ###
+**/application-dev*.yml
+**/application-local*.yml
+**/*.local.yml
+**/*.local.properties
+**/.env
+
+### OS ###
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Logs ###
+*.log
+logs/
+
+### Java artifacts ###
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+
+### Maven ###
+.mvn/wrapper/maven-wrapper.jar
+
+### JVM crash ###
+hs_err_pid*
+replay_pid*
+
+### Misc ###
+*.zip
+*.tar.gz
+*.rar
