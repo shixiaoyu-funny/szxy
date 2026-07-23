@@ -1,0 +1,116 @@
+server:
+  port: 8080
+spring:
+  http:
+    client:
+      connect-timeout: 30s
+      read-timeout: 120s
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
+  ai:
+    openai:
+      base-url: https://api.deepseek.com
+      api-key: ${deepseek.api-key}
+      chat:
+        options:
+          model: deepseek-chat
+          temperature: 0.1
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  mail:
+    host: ${mail.host}
+    username: ${mail.username}
+    password: ${mail.password}
+    port: 587
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true  # 开启STARTTLS
+            required: true
+          ssl:
+            enable: false
+  rabbitmq:
+    username: ${rabbitmq.username}
+    password: ${rabbitmq.password}
+    host: ${rabbitmq.host}
+    port: 5672
+    listener:
+      simple:
+        prefetch: 10
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+          multiplier: 1
+          max-attempts: 3
+          initial-interval: 1000ms
+          stateless: false
+  datasource:
+    url: ${mysql.url}
+    username: ${mysql.username}
+    password: ${mysql.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${redis.url}
+      port: ${redis.port}
+      password: ${redis.password}
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.shixiaoyu.xiangyueproject.controller
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+mybatis-plus:
+  configuration:
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+  global-config:
+    db-config:
+      update-strategy: not_null
+      id-type: auto
+  type-aliases-package: com.shixiaoyu.xiangyueproject.entity.po
+  mapper-locations: "classpath*:/mapper/**/*.xml"
+aliyun:
+  accessKeyId: ${aliyun.key-id}
+  accessKeySecret: ${aliyun.secret}
+  regionId:  ${aliyun.regionId}
+  endpoint: ${aliyun.endpoint}
+  bucketName: ${aliyun.bucketName}
+baiduyun:
+  recognize:
+    apiKey: ${baiduyun.api-key}
+    secretKey: ${baiduyun.secret-key}
+mvc:
+  interceptor:
+    include-path:
+      - /**
+      - /common/login/info_set
+    exclude-path:
+      - /common/login/sendcode
+      - /common/login/phone_login
+      - /common/login/email_login
+      - /common/login/pw_login
+      - /doc.html
+      - /webjars/**
+      - /v3/api-docs/**
+      - /swagger-ui.html
+      - /favicon.ico
+      - /ws/**
+gaode:
+  apiKey: ${gaode.api-key}
