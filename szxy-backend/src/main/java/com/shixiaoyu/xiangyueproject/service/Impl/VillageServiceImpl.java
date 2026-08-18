@@ -2,154 +2,183 @@ package com.shixiaoyu.xiangyueproject.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shixiaoyu.xiangyueproject.constants.ErrorConstants;
+import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.PageResultDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.VillageBaseDTO;
-import com.shixiaoyu.xiangyueproject.entity.dto.VillageSortDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.FarmerUser;
+import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageBase;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageScenic;
-import com.shixiaoyu.xiangyueproject.entity.result.Result;
 import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
+import com.shixiaoyu.xiangyueproject.exception.BusinessException;
 import com.shixiaoyu.xiangyueproject.mapper.FarmerMapper;
 import com.shixiaoyu.xiangyueproject.mapper.ScenicMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
-import com.shixiaoyu.xiangyueproject.service.ScenicService;
 import com.shixiaoyu.xiangyueproject.service.VillageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import static com.shixiaoyu.xiangyueproject.constants.ErrorConstants.*;
-import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.*;
+import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.VILLAGE_COLLECTIONS_TOP_10;
+import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.VILLAGE_LIKES_TOP_10;
+import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.VILLAGE_TOP_10_TTL;
 
+/**
+ * 农村信息服务实现
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> implements VillageService {
+
     private final VillageMapper villageMapper;
     private final ScenicMapper scenicMapper;
-    private final StringRedisTemplate stringRedisTemplate;
     private final FarmerMapper farmerMapper;
+    private final UserMapper userMapper;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Override
-    public Result<PageResultVO<VillageBaseVO>> villageList(PageResultDTO pageResultDTO) {
-        int pageNo = pageResultDTO.getPageNo();
-        int pageSize = pageResultDTO.getPageSize();
-        Page p = Page.of(pageNo, pageSize);
-        p.addOrder(OrderItem.asc("create_time"));
-        Page<VillageBase> page = page(p);
-        List<VillageBaseVO> voList = page.getRecords().stream().map(po -> BeanUtil.copyProperties(po, VillageBaseVO.class)).toList();
-        return Result.ok(new PageResultVO(page.getTotal(), voList));
+    public PageResultVO<VillageBaseVO> villageList(PageResultDTO pageResultDTO) {
+        int pageNo = pageResultDTO.getPageNo() == null || pageResultDTO.getPageNo() < 1 ? 1 : pageResultDTO.getPageNo();
+        int pageSize = pageResultDTO.getPageSize() == null || pageResultDTO.getPageSize() < 1 ? 10 : pageResultDTO.getPageSize();
+        Page<VillageBase> page = Page.of(pageNo, pageSize);
+        page.addOrder(OrderItem.asc("create_time"));
+        Page<VillageBase> result = page(page);
+        List<VillageBaseVO> voList = result.getRecords().stream()
+                .map(po -> BeanUtil.copyProperties(po, VillageBaseVO.class))
+                .collect(Collectors.toList());
+        fillManagerNames(voList, result.getRecords());
+        return new PageResultVO<>(result.getTotal(), voList);
     }
 
     @Override
-    public Result addVillage(VillageBaseDTO villageBaseDTO) {
-        if (villageBaseDTO == null) {
-            return Result.error(INSERT_NULL);
+    public void addVillage(VillageBaseDTO dto) {
+        if (dto == null) {
+            throw new BusinessException(ErrorConstants.INSERT_NULL);
         }
-        int insert = villageMapper.insert(BeanUtil.copyProperties(villageBaseDTO, VillageBase.class));
-        if (insert == 0) {
-            return Result.error(ERROR_INSERT);
+        VillageBase villageBase = BeanUtil.copyProperties(dto, VillageBase.class);
+        if (villageMapper.insert(villageBase) != 1) {
+            throw new BusinessException(ErrorConstants.ERROR_INSERT);
         }
-        return Result.ok();
     }
 
     @Override
-    public Result updateVillage(Long id, VillageBaseDTO villageBaseDTO) {
+    public void updateVillage(Long id, VillageBaseDTO dto) {
         if (id == null) {
-            return Result.error(NULL_ID);
+            throw new BusinessException(ErrorConstants.NULL_ID);
         }
-        VillageBase villageBase = getById(id);
-        if (villageBase == null) {
-            return Result.error(DATA_NOT_EXIST);
+        if (getById(id) == null) {
+            throw new BusinessException(ErrorConstants.DATA_NOT_EXIST);
         }
-        boolean update = lambdaUpdate().eq(VillageBase::getId, id).update(BeanUtil.copyProperties(villageBaseDTO, VillageBase.class));
-        if (!update) {
-            return Result.error(ERROR_UPDATE);
+        VillageBase villageBase = BeanUtil.copyProperties(dto, VillageBase.class);
+        villageBase.setId(id);
+        if (!updateById(villageBase)) {
+            throw new BusinessException(ErrorConstants.ERROR_UPDATE);
         }
-        return Result.ok();
     }
 
     @Override
-    public Result<List<VillageBaseVO>> villageLikes() {
-        //补充点赞量
-        return Result.ok(getSorted(VILLAGE_LIKES_TOP_10));
+    public void deleteVillage(Long id) {
+        if (id == null) {
+            throw new BusinessException(ErrorConstants.NULL_ID);
+        }
+        if (!removeById(id)) {
+            throw new BusinessException(ErrorConstants.ERROR_DELETE);
+        }
     }
 
     @Override
-    public Result<List<VillageBaseVO>> villageCollections() {
-        return Result.ok(getSorted(VILLAGE_COLLECTIONS_TOP_10));
+    public List<VillageBaseVO> villageLikes() {
+        return getTop10(VILLAGE_LIKES_TOP_10, true);
     }
 
-    /**
-     * 收藏点赞通用排行
-     * @param key
-     * @return
-     */
-    private List<VillageBaseVO> getSorted(String key){
-        //查缓存
-        Set<ZSetOperations.TypedTuple<String>> set = stringRedisTemplate.opsForZSet().reverseRangeWithScores(key, 0, 9);
-        if(CollectionUtils.isEmpty(set)){
-            return Collections.emptyList();
-        }
-        //解析数据
-        List<Long> idList=new ArrayList<>();
-        Map<Long,Integer> map=new HashMap<>();
-        for(ZSetOperations.TypedTuple<String> ele:set){
-            long id = Long.parseLong(ele.getValue());
-            int scores = ele.getScore().intValue();
-            idList.add(id);
-            map.put(id,scores);
-        }
-        //有序查询
-        String idStr = StrUtil.join(",", idList);
-        List<VillageBase> sortedList = query().in("id", idList)
-                .last("order by field(id," + idStr + ")")
-                .list();
-        List<VillageBaseVO> voList = sortedList.stream()
-                .map(vb->{
-                    VillageBaseVO villageBaseVO = BeanUtil.copyProperties(vb, VillageBaseVO.class);
-                    Long manageId = vb.getManageId();
-                    if(manageId==null){
-                        LambdaQueryWrapper<FarmerUser> wrapper = new LambdaQueryWrapper<FarmerUser>().eq(FarmerUser::getVillageId, vb.getId());
-                        FarmerUser farmerUser = farmerMapper.selectOne(wrapper);
-                        villageBaseVO = BeanUtil.copyProperties(vb, VillageBaseVO.class);
-                        if (farmerUser!=null) {
-                            villageBaseVO.setManagerName(farmerUser.getFarmName());
-                        }
-                    }
-                    else{
-                        LambdaQueryWrapper<FarmerUser> wrapper = new LambdaQueryWrapper<FarmerUser>().eq(FarmerUser::getUserId, vb.getManageId());
-                        FarmerUser farmerUser = farmerMapper.selectOne(wrapper);
-                        if(farmerUser!=null){
-                            villageBaseVO.setManagerName(farmerUser.getFarmName());
-                        }
-                    }
-                    return villageBaseVO;
-                })
-                .toList();
-        //补充分数
-        for(VillageBaseVO vo:voList){
-            if (key.equals(VILLAGE_COLLECTIONS_TOP_10)) {
-                vo.setCollects(map.get(vo.getId()));
-            } else {
-                vo.setLikes(map.get(vo.getId()));
+    @Override
+    public List<VillageBaseVO> villageCollections() {
+        return getTop10(VILLAGE_COLLECTIONS_TOP_10, false);
+    }
+
+    // ===================== 私有工具 =====================
+
+    /** top10 排行：先查缓存，未命中则按下属景点点赞/收藏聚合计算并回填缓存 */
+    private List<VillageBaseVO> getTop10(String cacheKey, boolean byLikes) {
+        String cached = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (StrUtil.isNotBlank(cached)) {
+            try {
+                return objectMapper.readValue(cached, new TypeReference<List<VillageBaseVO>>() {
+                });
+            } catch (Exception e) {
+                log.error("top10 缓存解析失败，key:{}", cacheKey, e);
             }
-
+        }
+        List<VillageBase> villages = villageMapper.selectList(null);
+        if (villages.isEmpty()) {
+            return List.of();
+        }
+        // 一次性查出全部景点，按村落聚合点赞/收藏总和，避免 N+1
+        List<VillageScenic> allScenics = scenicMapper.selectList(null);
+        Map<Long, Integer> totalMap = allScenics.stream().collect(Collectors.groupingBy(
+                VillageScenic::getVillageId,
+                Collectors.summingInt(s -> byLikes
+                        ? (s.getLikes() == null ? 0 : s.getLikes())
+                        : (s.getCollections() == null ? 0 : s.getCollections()))));
+        List<VillageBase> topVillages = villages.stream()
+                .sorted((a, b) -> Integer.compare(totalMap.getOrDefault(b.getId(), 0), totalMap.getOrDefault(a.getId(), 0)))
+                .limit(10)
+                .collect(Collectors.toList());
+        List<VillageBaseVO> voList = topVillages.stream().map(v -> {
+            VillageBaseVO vo = BeanUtil.copyProperties(v, VillageBaseVO.class);
+            if (byLikes) {
+                vo.setLikes(totalMap.get(v.getId()));
+            } else {
+                vo.setCollects(totalMap.get(v.getId()));
+            }
+            return vo;
+        }).collect(Collectors.toList());
+        fillManagerNames(voList, topVillages);
+        try {
+            stringRedisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(voList), VILLAGE_TOP_10_TTL, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.error("top10 缓存写入失败，key:{}", cacheKey, e);
         }
         return voList;
+    }
+
+    /** 批量填充村长展示名 */
+    private void fillManagerNames(List<VillageBaseVO> voList, List<VillageBase> poList) {
+        Set<Long> manageIds = poList.stream().map(VillageBase::getManageId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (manageIds.isEmpty()) {
+            return;
+        }
+        Map<Long, User> userMap = userMapper.selectBatchIds(manageIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+        for (int i = 0; i < voList.size(); i++) {
+            Long manageId = poList.get(i).getManageId();
+            if (manageId == null) {
+                continue;
+            }
+            User u = userMap.get(manageId);
+            if (u != null) {
+                voList.get(i).setManagerName(u.getUsername());
+            }
+        }
     }
 }

@@ -1,103 +1,54 @@
 package com.shixiaoyu.xiangyueproject.entity.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
+import com.shixiaoyu.xiangyueproject.enums.VillageTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
+/**
+ * 农村基础信息 DTO（管理端新增/修改）
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(title = "村落基础信息实体DTO", description = "存储乡村的基础地理、介绍等核心信息")
+@Schema(title = "村落基础信息DTO")
 public class VillageBaseDTO {
-    /**
-     * 农村id
-     */
-    @Schema(description = "村落ID（自增主键）")
-    private Long id;
-    /**
-     * 村长id
-     */
-    @Schema(description = "村长ID（关联农户用户表主键）")
-    @JsonAlias({"manage_id", "manageId"})
-    private Long manageId;
-
-    /**
-     * 农村名称
-     */
-    @Schema(description = "村落名称（唯一）")
+    @Schema(description = "村落名称")
     private String name;
 
-    /**
-     * 省份
-     */
-    @Schema(description = "所属省份（如：浙江省）")
+    @Schema(description = "所属省份")
     private String province;
 
-    /**
-     * 城市
-     */
-    @Schema(description = "所属城市（如：杭州市）")
+    @Schema(description = "所属城市")
     private String city;
 
-    /**
-     * 区/县
-     */
-    @Schema(description = "所属区县（如：西湖区）")
+    @Schema(description = "所属区县")
     private String county;
 
-    /**
-     * 经度
-     */
-    @Schema(description = "村落经度（高精度坐标）")
+    @Schema(description = "经度")
     private BigDecimal longitude;
 
-    /**
-     * 纬度
-     */
-    @Schema(description = "村落纬度（高精度坐标）")
+    @Schema(description = "纬度")
     private BigDecimal latitude;
 
-    /**
-     * 村落类型（特色）
-     */
-    @Schema(description = "村落特色类型：1-古村落、2-生态村、3-民俗村、4-文旅村")
-    private Integer type;
+    @Schema(description = "村落特色类型：1古村落 2生态村 3民俗村 4文旅村")
+    private VillageTypeEnum type;
 
-    /**
-     * 村落介绍
-     */
-    @Schema(description = "村落详细介绍（文本）")
+    @Schema(description = "村落详细介绍")
     private String intro;
 
-    /**
-     * 村落图片
-     */
-    @Schema(description = "村落封面图片URL（多张用逗号分隔）")
+    @Schema(description = "封面图片URL")
     private String image;
 
-    /**
-     * 最佳游玩时间
-     */
-    @Schema(description = "最佳游玩时间（如：3-5月、9-11月）")
-    @JsonAlias({"best_time", "bestTime"})
+    @Schema(description = "最佳游玩时间")
     private String bestTime;
 
-    /**
-     * 季节性活动
-     */
-    @Schema(description = "季节性特色活动（如：油菜花节、丰收节）")
+    @Schema(description = "季节性活动")
     private String activity;
 
-    /**
-     * 联系电话/邮箱
-     */
-    @Schema(description = "村落官方联系方式（电话/邮箱，用逗号分隔）")
+    @Schema(description = "联系方式")
     private String contact;
 }

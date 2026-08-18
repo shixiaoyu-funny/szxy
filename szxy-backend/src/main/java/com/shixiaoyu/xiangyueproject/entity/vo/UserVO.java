@@ -1,55 +1,37 @@
 package com.shixiaoyu.xiangyueproject.entity.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.shixiaoyu.xiangyueproject.enums.RoleEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * 用户信息 VO（不含密码）
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Schema(title = "基础用户实体VO", description = "存储系统所有用户的通用基础信息")
+@Schema(title = "基础用户VO")
 public class UserVO {
-    /**
-     * 用户ID
-     */
-    @TableId(value = "id", type = IdType.AUTO)
-    @Schema(description = "用户ID（自增主键）")
+    @Schema(description = "用户ID")
     private Long id;
 
-    /**
-     * 用户名
-     */
-    @Schema(description = "登录用户名（唯一）")
+    @Schema(description = "用户名")
     private String username;
-    /**
-     * 手机号
-     */
-    @Schema(description = "用户手机号（唯一）")
+
+    @Schema(description = "手机号")
     private String phone;
 
-    /**
-     * 邮箱
-     */
-    @Schema(description = "用户邮箱（可选）")
+    @Schema(description = "邮箱")
     private String email;
 
-    /**
-     * 头像
-     */
-    @Schema(description = "用户头像URL地址")
-    private String avator;
-    /**
-     * 账号状态
-     */
-    @Schema(description = "账号状态：0-禁用、1-正常")
-    private Integer status;
+    @Schema(description = "头像URL")
+    private String avatar;
 
-    /**
-     * 用户类型
-     */
-    @Schema(description = "用户类型：1-普通用户、2-农户、3-管理员")
-    private Integer type;
+    @Schema(description = "角色：1游客 2农户 3村长 4管理员")
+    private RoleEnum role;
+
+    @Schema(description = "账号状态：0禁用 1正常")
+    private Integer status;
 }

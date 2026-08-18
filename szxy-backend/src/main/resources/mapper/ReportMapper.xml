@@ -3,7 +3,19 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.shixiaoyu.xiangyueproject.mapper.ReportMapper">
+
     <select id="farmCnt" resultType="java.lang.Integer">
-        select count(id) from farm_user;
+        SELECT COUNT(id) FROM farm_user
     </select>
+
+    <select id="countNewVillage" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM village_base
+        WHERE create_time &gt;= #{date}
+    </select>
+
+    <select id="countNewScenic" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM village_scenic
+        WHERE create_time &gt;= #{date}
+    </select>
+
 </mapper>

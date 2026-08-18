@@ -1,25 +1,24 @@
 server:
-  port: 8080
+  port: 8099
+
 spring:
-  http:
-    client:
-      connect-timeout: 30s
-      read-timeout: 120s
+  datasource:
+    url: ${mysql.url}
+    username: ${mysql.username}
+    password: ${mysql.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${redis.url}
+      port: ${redis.port}
+      password: ${redis.password}
+
   profiles:
-    active: dev
+    active: local
   servlet:
     multipart:
       max-file-size: 5MB
       max-request-size: 50MB
-  ai:
-    openai:
-      base-url: https://api.deepseek.com
-      api-key: ${deepseek.api-key}
-      chat:
-        options:
-          model: deepseek-chat
-          temperature: 0.1
-
   jackson:
     property-naming-strategy: SNAKE_CASE
   mail:
@@ -33,7 +32,7 @@ spring:
         smtp:
           auth: true
           starttls:
-            enable: true  # 开启STARTTLS
+            enable: true
             required: true
           ssl:
             enable: false
@@ -41,7 +40,7 @@ spring:
     username: ${rabbitmq.username}
     password: ${rabbitmq.password}
     host: ${rabbitmq.host}
-    port: 5672
+    port: ${rabbitmq.port}
     listener:
       simple:
         prefetch: 10
@@ -52,16 +51,6 @@ spring:
           max-attempts: 3
           initial-interval: 1000ms
           stateless: false
-  datasource:
-    url: ${mysql.url}
-    username: ${mysql.username}
-    password: ${mysql.password}
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  data:
-    redis:
-      host: ${redis.url}
-      port: ${redis.port}
-      password: ${redis.password}
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -73,10 +62,12 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: com.shixiaoyu.xiangyueproject.controller
+
 knife4j:
   enable: true
   setting:
     language: zh_cn
+
 mybatis-plus:
   configuration:
     default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
@@ -86,31 +77,29 @@ mybatis-plus:
       id-type: auto
   type-aliases-package: com.shixiaoyu.xiangyueproject.entity.po
   mapper-locations: "classpath*:/mapper/**/*.xml"
+
+auth:
+  # 无需登录即可访问的路径（登录注册、Swagger 文档等）
+  exclude-path:
+    - /lg/sdcode
+    - /lg/ph
+    - /lg/em
+    - /lg/pw
+    - /doc.html
+    - /webjars/**
+    - /v3/api-docs/**
+    - /swagger-ui.html
+    - /swagger-ui/**
+    - /favicon.ico
+    - /error
+  # 需要管理端权限（role=4）的路径
+  include-path:
+    - /admin/**
+    - /report/**
+
 aliyun:
   accessKeyId: ${aliyun.key-id}
   accessKeySecret: ${aliyun.secret}
-  regionId:  ${aliyun.regionId}
+  regionId: ${aliyun.regionId}
   endpoint: ${aliyun.endpoint}
   bucketName: ${aliyun.bucketName}
-baiduyun:
-  recognize:
-    apiKey: ${baiduyun.api-key}
-    secretKey: ${baiduyun.secret-key}
-mvc:
-  interceptor:
-    include-path:
-      - /**
-      - /common/login/info_set
-    exclude-path:
-      - /common/login/sendcode
-      - /common/login/phone_login
-      - /common/login/email_login
-      - /common/login/pw_login
-      - /doc.html
-      - /webjars/**
-      - /v3/api-docs/**
-      - /swagger-ui.html
-      - /favicon.ico
-      - /ws/**
-gaode:
-  apiKey: ${gaode.api-key}

@@ -3,205 +3,209 @@ package com.shixiaoyu.xiangyueproject.service.Impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSON;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.shixiaoyu.xiangyueproject.constants.CommonConstants;
-import com.shixiaoyu.xiangyueproject.entity.dto.ScenicAccessDTO;
-import com.shixiaoyu.xiangyueproject.entity.po.*;
-import com.shixiaoyu.xiangyueproject.entity.result.Result;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shixiaoyu.xiangyueproject.constants.ErrorConstants;
+import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
+import com.shixiaoyu.xiangyueproject.entity.dto.PageResultDTO;
+import com.shixiaoyu.xiangyueproject.entity.dto.ScenicDTO;
+import com.shixiaoyu.xiangyueproject.entity.po.FarmerUser;
+import com.shixiaoyu.xiangyueproject.entity.po.User;
+import com.shixiaoyu.xiangyueproject.entity.po.UserComment;
+import com.shixiaoyu.xiangyueproject.entity.po.VillageBase;
+import com.shixiaoyu.xiangyueproject.entity.po.VillageScenic;
+import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.ScenicVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.UserCommentVO;
-import com.shixiaoyu.xiangyueproject.enums.FarmerTypeEnum;
-import com.shixiaoyu.xiangyueproject.enums.ReviewStatusEnum;
-import com.shixiaoyu.xiangyueproject.enums.UserTypeEnum;
-import com.shixiaoyu.xiangyueproject.mapper.*;
-import com.shixiaoyu.xiangyueproject.server.WebSocketServer;
+import com.shixiaoyu.xiangyueproject.exception.BusinessException;
+import com.shixiaoyu.xiangyueproject.mapper.FarmerMapper;
+import com.shixiaoyu.xiangyueproject.mapper.ScenicMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserCommentMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
+import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.ScenicService;
-import com.shixiaoyu.xiangyueproject.service.VillageService;
-import com.shixiaoyu.xiangyueproject.util.UserHolder;
-import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
+import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.bcel.Const;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.SCENIC_COMMENTS;
-import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.USER_COMMENTS_TTL;
-
 /**
- * 景点服务实现类
+ * 景点服务实现
  */
-@Slf4j
 @Service
-public class ScenicServiceImpl extends ServiceImpl<ScenicAccessMapper, ScenicAccess> implements ScenicService {
+@RequiredArgsConstructor
+@Slf4j
+public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> implements ScenicService {
 
-    @Resource
-    private FarmerMapper farmerMapper;
-
-    @Resource
-    private ScenicAccessMapper scenicAccessMapper;
-
-    @Resource
-    private HttpServletRequest request;
-    @Resource
-    private VillageScenicMapper villageScenicMapper;
-    @Resource
-    private ScenicMapper scenicMapper;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-    @Resource
-    private UserCommentMapper userCommentMapper;
-    @Resource
-    private VillageService villageService;
-    @Resource
-    private VillageMapper villageMapper;
-    @Autowired
-    private RedisTemplate<Object, Object> redisTemplate;
-    @Autowired
-    private WebSocketServer webSocketServer;
+    private final ScenicMapper scenicMapper;
+    private final VillageMapper villageMapper;
+    private final FarmerMapper farmerMapper;
+    private final UserMapper userMapper;
+    private final UserCommentMapper userCommentMapper;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectMapper objectMapper;
 
     @Override
-    public Result registerPrivateScenic(ScenicAccessDTO dto) {
-        // 1. 权限校验：从请求属性获取当前用户ID
-        Long userId = (Long) request.getAttribute(CommonConstants.ATTR_USER_ID);
-        FarmerUser farmer = farmerMapper.selectOne(
-                new LambdaQueryWrapper<FarmerUser>()
-                        .eq(FarmerUser::getUserId, userId)
-        );
-        // DTO 字段名为 villageName，实际传村落主键 ID（与前端约定一致）
-        Long villageId = dto.getVillageName();
-        if (villageId == null) {
-            return Result.error("请选择所属村落");
+    public void register(ScenicDTO dto) {
+        if (!SecurityUtils.isFarmerOrAbove()) {
+            throw new BusinessException("权限不足：仅农户/村长可新增景点");
         }
-        LambdaQueryWrapper<VillageBase> wrapper = new LambdaQueryWrapper<VillageBase>().eq(VillageBase::getId, villageId);
-        VillageBase villageBase = villageMapper.selectOne(wrapper);
-        if (villageBase == null) {
-            return Result.error("该村落不存在");
+        Long currentUserId = SecurityUtils.currentUserId();
+        FarmerUser fu = farmerMapper.selectOne(new LambdaQueryWrapper<FarmerUser>()
+                .eq(FarmerUser::getUserId, currentUserId).last("limit 1"));
+        if (fu == null || fu.getVillageId() == null) {
+            throw new BusinessException("您还没有所属村落，无法新增景点");
         }
-        //转换实体
-        ScenicAccess access = new ScenicAccess();
-        BeanUtils.copyProperties(dto, access);
-        access.setVillageId(villageBase.getId());
-        // 3. 设置初始状态：待审核 (ReviewStatusEnum.UNDER_REVIEW = 0)
-        access.setStatus(ReviewStatusEnum.UNDER_REVIEW.getCode());
-        access.setUserId(userId); // 记录是谁申请的
-        webSocketServer.sendToAllClient("scenic_access");
-        return this.save(access) ? Result.ok() : Result.error("申请失败");
+        if (!fu.getVillageId().equals(dto.getVillageId())) {
+            throw new BusinessException("操作失败：只能在本村新增景点");
+        }
+        VillageScenic scenic = BeanUtil.copyProperties(dto, VillageScenic.class);
+        scenic.setUserId(currentUserId);
+        scenic.setLikes(0);
+        scenic.setCollections(0);
+        if (scenic.getPrice() == null) {
+            scenic.setPrice(0);
+        }
+        if (scenic.getHasAccommodation() == null) {
+            scenic.setHasAccommodation(0);
+        }
+        if (scenicMapper.insert(scenic) != 1) {
+            throw new BusinessException(ErrorConstants.ERROR_INSERT);
+        }
     }
 
     @Override
-    public Result registerPublicScenic(ScenicAccessDTO dto) {
-        // 1. 权限校验：从请求属性获取当前用户ID
-        Long userId = (Long) request.getAttribute(CommonConstants.ATTR_USER_ID);
-        FarmerUser farmer = farmerMapper.selectOne(
-                new LambdaQueryWrapper<FarmerUser>()
-                        .eq(FarmerUser::getUserId, userId)
-        );
-        // 校验是否为村长 (FarmerTypeEnum.VILLAGE_MANAGER = 2)
-        if (farmer == null || !farmer.getType().equals(FarmerTypeEnum.VILLAGE_MANAGER.getCode())) {
-            return Result.error("只有村长身份可以申请公共景点");
-        }
-        Long villageId = dto.getVillageName();
-        LambdaQueryWrapper<VillageBase> wrapper = new LambdaQueryWrapper<VillageBase>().eq(VillageBase::getId, villageId);
-        VillageBase villageBase = villageMapper.selectOne(wrapper);
-        if (villageBase == null) {
-            return Result.error("该村落不存在");
-        }
-        //转换实体
-        ScenicAccess access = new ScenicAccess();
-        BeanUtils.copyProperties(dto, access);
-        access.setVillageId(villageBase.getId());
-        // 3. 设置初始状态：待审核 (ReviewStatusEnum.UNDER_REVIEW = 0)
-        access.setStatus(ReviewStatusEnum.UNDER_REVIEW.getCode());
-        access.setUserId(userId); // 记录是谁申请的
-        webSocketServer.sendToAllClient("scenic_access");
-        return this.save(access) ? Result.ok() : Result.error("申请失败");
+    public List<ScenicVO> getTop10Scenic() {
+        List<VillageScenic> scenics = scenicMapper.selectList(new LambdaQueryWrapper<VillageScenic>()
+                .orderByDesc(VillageScenic::getLikes).last("limit 10"));
+        List<ScenicVO> voList = scenics.stream().map(s -> BeanUtil.copyProperties(s, ScenicVO.class))
+                .collect(Collectors.toList());
+        fillScenicVillageNames(voList);
+        return voList;
     }
 
     @Override
-    public Result getScenicAccessList(){
-        List<ScenicAccess> list = scenicAccessMapper.selectList(null);
-        return Result.ok(list);
-    }
-
-    @Override
-    public Result<List<ScenicVO>> getTop10Scenic() {
-        LambdaQueryWrapper<VillageScenic> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(VillageScenic::getLikes) // 根据点赞量降序
-                .last("limit 10");                    // 只取前10条
-        // 2. 查询数据库
-        List<VillageScenic> list = villageScenicMapper.selectList(wrapper);
-
-        // 3. 将 Entity 转换为 VO（如果字段不一致需要拷贝）
-        List<ScenicVO> voList = list.stream().map(scenic -> {
-            ScenicVO vo = new ScenicVO();
-            BeanUtils.copyProperties(scenic, vo);
-            return vo;
-        }).collect(Collectors.toList());
-
-        return Result.ok(voList);
+    public ScenicVO detail(Long id) {
+        VillageScenic scenic = scenicMapper.selectById(id);
+        if (scenic == null) {
+            throw new BusinessException(ErrorConstants.DATA_NOT_EXIST);
+        }
+        ScenicVO vo = BeanUtil.copyProperties(scenic, ScenicVO.class);
+        fillScenicVillageNames(List.of(vo));
+        return vo;
     }
 
     @Override
     public List<UserCommentVO> getScComments(Long id) {
-        String key=SCENIC_COMMENTS+id;
-        String res = stringRedisTemplate.opsForValue().get(key);
-        if(StrUtil.isNotBlank(res)){
-            log.info("从缓存中获取景点 {} 的评论",id);
-            return JSONUtil.toList(res,UserCommentVO.class);
+        String key = RedisConstants.SCENIC_COMMENTS + id;
+        String cached = stringRedisTemplate.opsForValue().get(key);
+        if (StrUtil.isNotBlank(cached)) {
+            try {
+                return objectMapper.readValue(cached, new TypeReference<List<UserCommentVO>>() {
+                });
+            } catch (Exception e) {
+                log.error("景点评论缓存解析失败，key:{}", key, e);
+            }
         }
-
-        LambdaQueryWrapper<UserComment> wrapper = new LambdaQueryWrapper<UserComment>()
-                .eq(UserComment::getTargetId, id)
-                .orderByDesc(UserComment::getCreateTime);
-        List<UserComment> userComments = userCommentMapper.selectList(wrapper);
-        if(userComments.isEmpty()){
-            int randomTtl = RandomUtil.randomInt(0, 401) + USER_COMMENTS_TTL;
-            stringRedisTemplate.opsForValue().set(
-                    key,
-                    JSONUtil.toJsonStr(Collections.emptyList()),
-                    randomTtl,
-                    TimeUnit.SECONDS
-            );
-            return Collections.emptyList();
+        List<UserComment> comments = userCommentMapper.selectList(new LambdaQueryWrapper<UserComment>()
+                .eq(UserComment::getScenicId, id).orderByDesc(UserComment::getCreateTime));
+        List<UserCommentVO> voList = comments.stream().map(c -> BeanUtil.copyProperties(c, UserCommentVO.class))
+                .collect(Collectors.toList());
+        fillCommentUsernames(voList, comments);
+        int ttl = RandomUtil.randomInt(0, 401) + RedisConstants.USER_COMMENTS_TTL;
+        try {
+            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(voList), ttl, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("景点评论缓存写入失败，key:{}", key, e);
         }
-        List<UserCommentVO> list = userComments.stream().map(userComment -> {
-            UserCommentVO userCommentVO = BeanUtil.copyProperties(userComment, UserCommentVO.class);
-            userCommentVO.setUsername(UserHolder.getUser().getUsername());
-            return userCommentVO;
-        }).toList();
-        log.info("从数据库中获取评论:{}",list);
-        //  数据库有数据 → 缓存数据 + 随机TTL（防雪崩）
-        int randomTtl = RandomUtil.randomInt(0, 401) + USER_COMMENTS_TTL;
-        stringRedisTemplate.opsForValue().set(
-                key,
-                JSONUtil.toJsonStr(list),
-                randomTtl,
-                TimeUnit.SECONDS
-        );
-        return list;
+        return voList;
     }
 
     @Override
-    public Result<ScenicVO> detail(Long id) {
-        VillageScenic villageScenic = scenicMapper.selectById(id);
-        Long villageId = villageScenic.getVillageId();
-        VillageBase villageBase = villageService.getById(villageId);
-        ScenicVO scenicVO = BeanUtil.copyProperties(villageScenic, ScenicVO.class);
-        scenicVO.setVillageName(villageBase.getName());
-        log.info("查询的景点信息为：{}",villageScenic);
-        return Result.ok(scenicVO);
+    public PageResultVO<ScenicVO> adminList(PageResultDTO pageResultDTO) {
+        int pageNo = pageResultDTO.getPageNo() == null || pageResultDTO.getPageNo() < 1 ? 1 : pageResultDTO.getPageNo();
+        int pageSize = pageResultDTO.getPageSize() == null || pageResultDTO.getPageSize() < 1 ? 10 : pageResultDTO.getPageSize();
+        Page<VillageScenic> page = scenicMapper.selectPage(Page.of(pageNo, pageSize),
+                new LambdaQueryWrapper<VillageScenic>().orderByDesc(VillageScenic::getCreateTime));
+        List<ScenicVO> voList = page.getRecords().stream().map(s -> BeanUtil.copyProperties(s, ScenicVO.class))
+                .collect(Collectors.toList());
+        fillScenicVillageNames(voList);
+        return new PageResultVO<>(page.getTotal(), voList);
+    }
+
+    @Override
+    public void adminAdd(Long villageId, ScenicDTO dto) {
+        if (villageMapper.selectById(villageId) == null) {
+            throw new BusinessException("该村落不存在");
+        }
+        VillageScenic scenic = BeanUtil.copyProperties(dto, VillageScenic.class);
+        scenic.setVillageId(villageId);
+        scenic.setUserId(SecurityUtils.currentUserId());
+        scenic.setLikes(0);
+        scenic.setCollections(0);
+        if (scenic.getPrice() == null) {
+            scenic.setPrice(0);
+        }
+        if (scenic.getHasAccommodation() == null) {
+            scenic.setHasAccommodation(0);
+        }
+        scenicMapper.insert(scenic);
+    }
+
+    @Override
+    public void adminUpdate(Long id, ScenicDTO dto) {
+        if (scenicMapper.selectById(id) == null) {
+            throw new BusinessException(ErrorConstants.DATA_NOT_EXIST);
+        }
+        VillageScenic scenic = BeanUtil.copyProperties(dto, VillageScenic.class);
+        scenic.setId(id);
+        scenicMapper.updateById(scenic);
+    }
+
+    @Override
+    public void adminDelete(Long id) {
+        if (scenicMapper.deleteById(id) != 1) {
+            throw new BusinessException(ErrorConstants.ERROR_DELETE);
+        }
+    }
+
+    // ===================== 私有工具 =====================
+
+    private void fillScenicVillageNames(List<ScenicVO> voList) {
+        if (voList.isEmpty()) {
+            return;
+        }
+        Set<Long> villageIds = voList.stream().map(ScenicVO::getVillageId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (villageIds.isEmpty()) {
+            return;
+        }
+        Map<Long, String> nameMap = villageMapper.selectBatchIds(villageIds).stream()
+                .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
+        voList.forEach(v -> v.setVillageName(nameMap.get(v.getVillageId())));
+    }
+
+    private void fillCommentUsernames(List<UserCommentVO> voList, List<UserComment> comments) {
+        if (comments.isEmpty()) {
+            return;
+        }
+        Set<Long> userIds = comments.stream().map(UserComment::getUserId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, String> nameMap = userMapper.selectBatchIds(userIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getUsername, (a, b) -> a));
+        for (int i = 0; i < voList.size(); i++) {
+            voList.get(i).setUsername(nameMap.get(comments.get(i).getUserId()));
+        }
     }
 }

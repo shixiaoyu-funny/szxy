@@ -1,392 +1,286 @@
 package com.shixiaoyu.xiangyueproject.service.Impl;
 
-
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.shixiaoyu.xiangyueproject.config.GaodeProperties;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserCommentDTO;
-import com.shixiaoyu.xiangyueproject.entity.po.*;
-import com.shixiaoyu.xiangyueproject.entity.result.Result;
-import com.shixiaoyu.xiangyueproject.entity.vo.LCCVO;
-import com.shixiaoyu.xiangyueproject.entity.vo.LocationVO;
+import com.shixiaoyu.xiangyueproject.entity.po.FarmerUser;
+import com.shixiaoyu.xiangyueproject.entity.po.User;
+import com.shixiaoyu.xiangyueproject.entity.po.UserCollect;
+import com.shixiaoyu.xiangyueproject.entity.po.UserComment;
+import com.shixiaoyu.xiangyueproject.entity.po.UserLike;
+import com.shixiaoyu.xiangyueproject.entity.po.VillageBase;
+import com.shixiaoyu.xiangyueproject.entity.po.VillageScenic;
+import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.ScenicVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
-import com.shixiaoyu.xiangyueproject.mapper.*;
+import com.shixiaoyu.xiangyueproject.enums.CommentShowEnum;
+import com.shixiaoyu.xiangyueproject.exception.BusinessException;
+import com.shixiaoyu.xiangyueproject.mapper.FarmerMapper;
+import com.shixiaoyu.xiangyueproject.mapper.ScenicMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserCollectMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserCommentMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserLikeMapper;
+import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
+import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.UserService;
-import com.shixiaoyu.xiangyueproject.util.LockUtils;
-import com.shixiaoyu.xiangyueproject.util.UserHolder;
+import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.text.Text;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
-import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import static com.shixiaoyu.xiangyueproject.constants.CommonConstants.AMAP_IP_API;
-import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.*;
+import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.VILLAGE_COLLECTIONS_TOP_10;
+import static com.shixiaoyu.xiangyueproject.constants.RedisConstants.VILLAGE_LIKES_TOP_10;
 
+/**
+ * 用户端服务实现
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@EnableConfigurationProperties(GaodeProperties.class)
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
     private final UserMapper userMapper;
-    private final GaodeProperties gaodeProperties;
-    private final RestTemplate restTemplate;
-    private final UserCollectMapper userCollectMapper;
     private final UserLikeMapper userLikeMapper;
+    private final UserCollectMapper userCollectMapper;
     private final UserCommentMapper userCommentMapper;
     private final ScenicMapper scenicMapper;
+    private final VillageMapper villageMapper;
+    private final FarmerMapper farmerMapper;
     private final StringRedisTemplate stringRedisTemplate;
-    private final LockUtils lockUtils;
-    private final RestHighLevelClient restHighLevelClient;
-    private static final String ES_INDEX = "village";
+    private final ObjectMapper objectMapper;
 
     @Override
-    public Result comment(UserCommentDTO userCommentDTO) {
-        // 1. 从 UserHolder 获取当前登录用户 ID (安全、可靠)
-        Long userId = UserHolder.getUser().getId();
-        stringRedisTemplate.delete(USER_COMMENTS+userId);
-        stringRedisTemplate.delete(SCENIC_COMMENTS+userCommentDTO.getTargetId());
-        if (userId == null) {
-            return Result.error("登录已过期，请重新登录");
+    public void comment(UserCommentDTO dto) {
+        Long userId = SecurityUtils.currentUserId();
+        UserComment comment = BeanUtil.copyProperties(dto, UserComment.class);
+        comment.setUserId(userId);
+        if (comment.getIsShow() == null) {
+            comment.setIsShow(CommentShowEnum.SHOW);
         }
-
-        // 2. 补全 DTO 里的 userId
-        userCommentDTO.setUserId(userId);
-        log.info("userCommentDTO:{}", userCommentDTO);
-
-        // 3. 设置默认值（如果前端没传）
-        if (userCommentDTO.getIsShow() == null) {
-            userCommentDTO.setIsShow(1); // 默认展示
+        userCommentMapper.insert(comment);
+        stringRedisTemplate.delete(RedisConstants.USER_COMMENTS + userId);
+        if (dto.getScenicId() != null) {
+            stringRedisTemplate.delete(RedisConstants.SCENIC_COMMENTS + dto.getScenicId());
         }
-        if (userCommentDTO.getTargetType() == null) {
-            userCommentDTO.setTargetType(1); // 默认评论景点
-        }
-
-        log.info("用户 {} 正在对目标 {} 发表评价，评分: {}", userId, userCommentDTO.getTargetId(), userCommentDTO.getScore());
-
-        // 4. 调用 Mapper 插入
-        userMapper.comment(userCommentDTO);
-        return Result.ok(UserHolder.getUser().getUsername());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result like(Long id) {
-        // 1. 从 UserHolder 获取当前登录用户的 ID
-        Long userId = UserHolder.getUser().getId();
-        stringRedisTemplate.delete(USER_LIKES+userId);
-
-        // 安全检查
-        if (userId == null) {
-            return Result.error("登录已过期，请重新登录");
+    public String like(Long scenicId) {
+        if (scenicMapper.selectById(scenicId) == null) {
+            throw new BusinessException("景点不存在");
         }
-
-        // 2. 检查该用户是否点过赞 (这里必须带上 userId)
-        Integer count = userMapper.checkLike(userId, id);
-
-        if (count > 0) {
-            // --- 取消点赞 ---
-            userMapper.deleteLike(userId, id); // 必须根据 userId 和 targetId 删除
-            userMapper.updateScenicLikeCount(id, -1);
-            return Result.ok("已取消点赞");
+        Long userId = SecurityUtils.currentUserId();
+        Long count = userLikeMapper.selectCount(
+                new LambdaQueryWrapper<UserLike>().eq(UserLike::getUserId, userId).eq(UserLike::getScenicId, scenicId));
+        boolean liked = count != null && count > 0;
+        if (liked) {
+            userLikeMapper.delete(new LambdaQueryWrapper<UserLike>()
+                    .eq(UserLike::getUserId, userId).eq(UserLike::getScenicId, scenicId));
+            updateScenicCount(scenicId, "likes", -1);
         } else {
-            // --- 点赞流程 ---
-            UserLike userLike = new UserLike();
-            userLike.setUserId(userId);    // 【核心修复点】：填充用户ID
-            userLike.setTargetId(id);      // 填充景点ID
-            userLike.setCreateTime(LocalDateTime.now()); // 填充时间
-
-            // 3. 执行插入
-            userMapper.insertLike(userLike);
-
-            // 4. 更新景点表的 likes 数量
-            userMapper.updateScenicLikeCount(id, 1);
-            return Result.ok(UserHolder.getUser().getUsername());
+            UserLike like = new UserLike();
+            like.setUserId(userId);
+            like.setScenicId(scenicId);
+            userLikeMapper.insert(like);
+            updateScenicCount(scenicId, "likes", 1);
         }
+        stringRedisTemplate.delete(RedisConstants.USER_LIKES + userId);
+        stringRedisTemplate.delete(VILLAGE_LIKES_TOP_10);
+        return liked ? "已取消点赞" : "点赞成功";
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class) // 涉及两张表的增删改，必须加事务
-    public Result collect(Long id) {
-        // 1. 获取当前登录用户 ID
-        Long userId = UserHolder.getUser().getId();
-        stringRedisTemplate.delete(USER_COLLECTIONS+userId);
-        if (userId == null) {
-            return Result.error("未登录或登录已过期");
+    @Transactional(rollbackFor = Exception.class)
+    public String collect(Long scenicId) {
+        if (scenicMapper.selectById(scenicId) == null) {
+            throw new BusinessException("景点不存在");
         }
-
-        // 2. 检查是否已经收藏过
-        Integer count = userMapper.checkCollect(userId, id);
-
-        if (count > 0) {
-            // --- 取消收藏流程 ---
-            userMapper.deleteCollect(userId, id);
-            userMapper.updateScenicCollectCount(id, -1);
-
-            log.info("用户 {} 取消收藏景点 {}", userId, id);
-            return Result.ok("已取消收藏");
+        Long userId = SecurityUtils.currentUserId();
+        Long count = userCollectMapper.selectCount(
+                new LambdaQueryWrapper<UserCollect>().eq(UserCollect::getUserId, userId).eq(UserCollect::getScenicId, scenicId));
+        boolean collected = count != null && count > 0;
+        if (collected) {
+            userCollectMapper.delete(new LambdaQueryWrapper<UserCollect>()
+                    .eq(UserCollect::getUserId, userId).eq(UserCollect::getScenicId, scenicId));
+            updateScenicCount(scenicId, "collections", -1);
         } else {
-            // --- 新增收藏流程 ---
-            UserCollect userCollect = new UserCollect();
-            userCollect.setUserId(userId);
-            userCollect.setTargetId(id);
-            // 手动设置当前时间
-            userCollect.setCreateTime(LocalDateTime.now());
-
-            userMapper.insertCollect(userCollect);
-            userMapper.updateScenicCollectCount(id, 1);
-
-            log.info("用户 {} 收藏景点成功", userId);
-            stringRedisTemplate.delete(USER_COLLECTIONS+userId);
-            return Result.ok(UserHolder.getUser().getUsername());
+            UserCollect collect = new UserCollect();
+            collect.setUserId(userId);
+            collect.setScenicId(scenicId);
+            userCollectMapper.insert(collect);
+            updateScenicCount(scenicId, "collections", 1);
         }
+        stringRedisTemplate.delete(RedisConstants.USER_COLLECTIONS + userId);
+        stringRedisTemplate.delete(VILLAGE_COLLECTIONS_TOP_10);
+        return collected ? "已取消收藏" : "收藏成功";
     }
 
     @Override
-    public Result<LocationVO> location(String ip) {
-        ip = "111.53.227.84";//todo：测试用
-        String apiKey = gaodeProperties.getApiKey();
-        String url = AMAP_IP_API + "?key=" + apiKey + "&ip=" + ip;
-        GaodeIP res = restTemplate.getForObject(url, GaodeIP.class);
-        if (res == null) {
-            return Result.error("获取位置信息失败");
+    public boolean isLike(Long scenicId) {
+        Long count = userLikeMapper.selectCount(new LambdaQueryWrapper<UserLike>()
+                .eq(UserLike::getUserId, SecurityUtils.currentUserId()).eq(UserLike::getScenicId, scenicId));
+        return count != null && count > 0;
+    }
+
+    @Override
+    public boolean isCollect(Long scenicId) {
+        Long count = userCollectMapper.selectCount(new LambdaQueryWrapper<UserCollect>()
+                .eq(UserCollect::getUserId, SecurityUtils.currentUserId()).eq(UserCollect::getScenicId, scenicId));
+        return count != null && count > 0;
+    }
+
+    @Override
+    public List<ScenicVO> getLikes() {
+        return listRelatedScenics(userLikeMapper, SecurityUtils.currentUserId(),
+                UserLike::getUserId, UserLike::getScenicId, UserLike::getCreateTime, RedisConstants.USER_LIKES);
+    }
+
+    @Override
+    public List<ScenicVO> getComments() {
+        return listRelatedScenics(userCommentMapper, SecurityUtils.currentUserId(),
+                UserComment::getUserId, UserComment::getScenicId, UserComment::getCreateTime, RedisConstants.USER_COMMENTS);
+    }
+
+    @Override
+    public List<ScenicVO> getCollections() {
+        return listRelatedScenics(userCollectMapper, SecurityUtils.currentUserId(),
+                UserCollect::getUserId, UserCollect::getScenicId, UserCollect::getCreateTime, RedisConstants.USER_COLLECTIONS);
+    }
+
+    @Override
+    public PageResultVO<VillageBaseVO> search(String content, Integer pageNo, Integer pageSize) {
+        int pn = pageNo == null || pageNo < 1 ? 1 : pageNo;
+        int ps = pageSize == null || pageSize < 1 ? 10 : pageSize;
+        LambdaQueryWrapper<VillageBase> wrapper = new LambdaQueryWrapper<>();
+        if (StrUtil.isNotBlank(content)) {
+            String kw = StrUtil.trim(content);
+            wrapper.and(w -> w.like(VillageBase::getName, kw)
+                    .or().like(VillageBase::getIntro, kw)
+                    .or().like(VillageBase::getProvince, kw)
+                    .or().like(VillageBase::getCity, kw)
+                    .or().like(VillageBase::getCounty, kw)
+                    .or().like(VillageBase::getActivity, kw));
         }
-        if (res.getProvince() == null || res.getCity() == null) {
-            return Result.ok(new LocationVO("未知省", "未知市"));
+        wrapper.orderByDesc(VillageBase::getCreateTime);
+        Page<VillageBase> page = villageMapper.selectPage(Page.of(pn, ps), wrapper);
+        List<VillageBaseVO> voList = page.getRecords().stream()
+                .map(po -> BeanUtil.copyProperties(po, VillageBaseVO.class))
+                .collect(Collectors.toList());
+        fillManagerNames(voList, page.getRecords());
+        return new PageResultVO<>(page.getTotal(), voList);
+    }
+
+    // ===================== 私有工具 =====================
+
+    /** 点赞/收藏数原子增减，避免并发丢失 */
+    private void updateScenicCount(Long scenicId, String column, int step) {
+        scenicMapper.update(null, new LambdaUpdateWrapper<VillageScenic>()
+                .eq(VillageScenic::getId, scenicId)
+                .setSql(column + " = " + column + " + " + step));
+    }
+
+    /** 查询用户关联的景点列表（带缓存，随机TTL防雪崩） */
+    private <T> List<ScenicVO> listRelatedScenics(BaseMapper<T> mapper, Long userId,
+                                                  SFunction<T, Long> userIdGetter,
+                                                  SFunction<T, Long> scenicIdGetter,
+                                                  SFunction<T, LocalDateTime> timeGetter,
+                                                  String cachePrefix) {
+        String cacheKey = cachePrefix + userId;
+        String cached = stringRedisTemplate.opsForValue().get(cacheKey);
+        if (StrUtil.isNotBlank(cached)) {
+            try {
+                return objectMapper.readValue(cached, new TypeReference<List<ScenicVO>>() {
+                });
+            } catch (Exception e) {
+                log.error("解析缓存失败，key:{}", cacheKey, e);
+            }
         }
-        String realProcince = getReal(res.getProvince());
-        String realCity = getReal(res.getCity());
-        return Result.ok(new LocationVO(realProcince, realCity));
-    }
-
-    @Override
-    public Result<List<ScenicVO>> getLikes() {
-        return Result.ok(getVOList(userLikeMapper,
-                UserHolder.getUser().getId(),
-                UserLike::getUserId,
-                UserLike::getTargetId,
-                UserLike::getCreateTime,
-                RedisConstants.USER_LIKES,
-                RedisConstants.LOCK_LIKE_PREFIX));
-    }
-
-    @Override
-    public Result<List<ScenicVO>> getComments() {
-        return Result.ok(getVOList(userCommentMapper,
-                UserHolder.getUser().getId(),
-                UserComment::getUserId,
-                UserComment::getTargetId,
-                UserComment::getCreateTime,
-                RedisConstants.USER_COMMENTS,
-                RedisConstants.LOCK_COMMENT_PREFIX));
-    }
-
-    @Override
-    public Result<List<ScenicVO>> getCollections() {
-        return Result.ok(getVOList(userCollectMapper, UserHolder.getUser().getId(),
-                UserCollect::getUserId,
-                UserCollect::getTargetId,
-                UserCollect::getCreateTime,
-                RedisConstants.USER_COLLECTIONS,
-                RedisConstants.LOCK_COLLECT_PREFIX));
-    }
-
-    @Override
-    public Result isLike(Long scenicId) {
-        LambdaQueryWrapper<UserLike> queryWrapper = new LambdaQueryWrapper<UserLike>()
-                .eq(UserLike::getTargetId, scenicId)
-                .eq(UserLike::getUserId, UserHolder.getUser().getId());
-        UserLike userLike = userLikeMapper.selectOne(queryWrapper);
-        if(userLike==null){
-            log.info("用户 {} 未点赞景点 {}", UserHolder.getUser().getId(), scenicId);
-            return Result.ok(0);
+        LambdaQueryWrapper<T> qw = new LambdaQueryWrapper<T>()
+                .eq(userIdGetter, userId).orderByDesc(timeGetter);
+        List<T> rows = mapper.selectList(qw);
+        List<Long> scenicIds = rows.stream().map(scenicIdGetter).filter(Objects::nonNull).toList();
+        List<ScenicVO> result = new ArrayList<>();
+        if (!scenicIds.isEmpty()) {
+            Map<Long, VillageScenic> scenicMap = scenicMapper.selectList(
+                            new LambdaQueryWrapper<VillageScenic>().in(VillageScenic::getId, scenicIds))
+                    .stream().collect(Collectors.toMap(VillageScenic::getId, s -> s));
+            for (Long id : scenicIds) {
+                VillageScenic s = scenicMap.get(id);
+                if (s != null) {
+                    result.add(toScenicVO(s));
+                }
+            }
         }
-        log.info("用户 {} 已点赞景点 {}", UserHolder.getUser().getId(), scenicId);
-        return Result.ok(1);
-    }
-
-    @Override
-    public Result isCollect(Long scenicId) {
-        LambdaQueryWrapper<UserCollect> queryWrapper = new LambdaQueryWrapper<UserCollect>()
-                .eq(UserCollect::getTargetId, scenicId)
-                .eq(UserCollect::getUserId, UserHolder.getUser().getId());
-        UserCollect userCollect = userCollectMapper.selectOne(queryWrapper);
-        log.info("userCollect:{}",userCollect);
-        if(userCollect==null){
-            log.info("用户 {} 未收藏景点 {}", UserHolder.getUser().getId(), scenicId);
-            return Result.ok(0);
-        }
-        log.info("用户 {} 已收藏景点 {}", UserHolder.getUser().getId(), scenicId);
-        return Result.ok(1);
-    }
-
-    @Override
-    public Result<List<VillageBaseVO>> search(String content) {
-        List<VillageBaseVO> resultList = new ArrayList<>();
-
+        int ttl = RandomUtil.randomInt(0, 401) + RedisConstants.USER_COMMENTS_TTL;
         try {
-            // 1. 创建搜索请求
-            SearchRequest searchRequest = new SearchRequest(ES_INDEX);
-            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-
-            // 2. 关键词搜索（多字段模糊匹配）
-            if (StringUtils.hasText(content)) {
-                sourceBuilder.query(QueryBuilders.multiMatchQuery(content,
-                        "name",        // 村落名
-                        "intro",       // 介绍
-                        "activity",    // 活动
-                        "province",    // 省
-                        "city",        // 市
-                        "county",      // 县
-                        "managerName"  // 村长姓名
-                ));
-            } else {
-                // 无关键词：返回全部
-                sourceBuilder.query(QueryBuilders.matchAllQuery());
-            }
-
-            // 3. 执行搜索
-            searchRequest.source(sourceBuilder);
-            SearchResponse response = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-            SearchHits hits = response.getHits();
-
-            // 4. 解析结果 → 封装成 VillageBaseVO
-            for (SearchHit hit : hits) {
-                // JSON 直接转实体，干净无高亮
-                VillageBaseVO vo = JSONUtil.toBean(hit.getSourceAsString(), VillageBaseVO.class);
-                resultList.add(vo);
-            }
-
+            stringRedisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(result), ttl, TimeUnit.SECONDS);
         } catch (Exception e) {
-            log.error("搜索服务异常");
-            return Result.ok(new ArrayList<>());
+            log.error("写缓存失败，key:{}", cacheKey, e);
         }
-
-        return Result.ok(resultList);
+        return result;
     }
 
-
-    /**
-     * 统一泛型方法+解决缓存击穿、雪崩、穿透问题
-     * @param mapper
-     * @param id
-     * @param userIdGetter
-     * @param targetIdGetter
-     * @param timeGetter
-     * @param cachePrefix
-     * @param lockPrefix
-     * @return
-     * @param <T>
-     */
-    private <T> List<ScenicVO> getVOList(BaseMapper<T> mapper,
-                                         Long id,
-                                         SFunction<T, Long> userIdGetter,
-                                         Function<T, Long> targetIdGetter,
-                                         SFunction<T, LocalDateTime> timeGetter,
-                                         String cachePrefix,
-                                         String lockPrefix) {
-        String cacheKey = cachePrefix +id;
-        String lockKey= lockPrefix + id;
-        int retry=0;
-        while(retry<MAX_RETRY_COUNT){
-            //查缓存
-            String cacheRes=stringRedisTemplate.opsForValue().get(cacheKey);
-            if (StrUtil.isNotBlank(cacheRes)) {
-                List<ScenicVO> list = JSONUtil.toList(cacheRes, ScenicVO.class);
-                log.info("用户 {} 获取的景点列表：{}", id, list);
-                return list;
-            }
-            //缓存为空，尝试获取锁并进行缓存重建
-            boolean tryLock = lockUtils.tryLock(lockKey);
-            if(tryLock){
-                try{
-                    //拿到锁，进行double check，查看在这期间是否有拿到缓存
-                    cacheRes = stringRedisTemplate.opsForValue().get(cacheKey);
-                    if (StrUtil.isNotBlank(cacheRes)) {
-                        List<ScenicVO> list = JSONUtil.toList(cacheRes, ScenicVO.class);
-                        log.info("用户 {} 获取的景点列表：{}", id, list);
-                        return list;
-                    }
-                    //发现没有缓存，开始重建缓存，查询数据库
-                    return reBuildCache(mapper, id, userIdGetter, targetIdGetter, timeGetter, cacheKey);
-                } finally {
-                    //使用finally，保证锁一定会被释放
-                    lockUtils.unlock(lockKey);
-                }
-            }
-            else{
-                try {
-                    Thread.sleep(RETRY_TIME);
-                } catch (InterruptedException e) {
-                    log.error("线程重试被中断,{}",e.getMessage());
-                    return Collections.emptyList();
-                }
-                retry++;
-            }
+    /** 景点转 VO 并批量填充村落名称，避免 N+1 */
+    private void fillScenicVillageNames(List<ScenicVO> voList) {
+        if (voList.isEmpty()) {
+            return;
         }
-        log.info("用户 {} 尝试获取锁失败，重试次数：{}", id, retry);
-        log.warn("缓存重建失败");
-        return Collections.emptyList();
+        Set<Long> villageIds = voList.stream().map(ScenicVO::getVillageId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (villageIds.isEmpty()) {
+            return;
+        }
+        Map<Long, String> nameMap = villageMapper.selectBatchIds(villageIds).stream()
+                .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
+        voList.forEach(v -> v.setVillageName(nameMap.get(v.getVillageId())));
     }
 
-    private <T> @NotNull List<ScenicVO> reBuildCache(BaseMapper<T> mapper, Long id, SFunction<T, Long> userIdGetter, Function<T, Long> targetIdGetter, SFunction<T, LocalDateTime> timeGetter, String cacheKey) {
-        LambdaQueryWrapper<T> query1 = new LambdaQueryWrapper<T>().eq(userIdGetter, id).orderByDesc(timeGetter);
-        List<T> userLikes = mapper.selectList(query1);
-        List<Long> scenicIdList = userLikes.stream().map(targetIdGetter).toList();
-        log.info("用户 {} 获取的景点 ID 列表：{}", id, scenicIdList);
-        if (scenicIdList.isEmpty()) {
-            int ttl = RandomUtil.randomInt(0, 401) + USER_COMMENTS_TTL;
-            stringRedisTemplate.opsForValue().set(cacheKey, JSONUtil.toJsonStr(Collections.emptyList()), ttl, TimeUnit.SECONDS);
-            return Collections.emptyList();
-        }
-        String join = StrUtil.join(",", scenicIdList);
-        LambdaQueryWrapper<VillageScenic> scenicQuery = new LambdaQueryWrapper<VillageScenic>().in(VillageScenic::getId, scenicIdList).last("order by field(id," + join + ")");
-        List<VillageScenic> villageScenics = scenicMapper.selectList(scenicQuery);
-        List<ScenicVO> voList = villageScenics.stream().map(item -> BeanUtil.copyProperties(item, ScenicVO.class)).toList();
-        int ttl = RandomUtil.randomInt(0, 401) + USER_COMMENTS_TTL;
-        stringRedisTemplate.opsForValue().set(cacheKey, JSONUtil.toJsonStr(voList), ttl, TimeUnit.SECONDS);
-        return voList;
+    private ScenicVO toScenicVO(VillageScenic scenic) {
+        ScenicVO vo = BeanUtil.copyProperties(scenic, ScenicVO.class);
+        fillScenicVillageNames(List.of(vo));
+        return vo;
     }
 
-    private String getReal(Object province) {
-        String real = "";
-        if (province instanceof List<?> list) {
-            if (CollectionUtils.isNotEmpty(list)) {
-                real = list.get(0).toString();
-            }
-        } else {
-            real = province.toString();
+    /** 批量填充村长展示名 */
+    private void fillManagerNames(List<VillageBaseVO> voList, List<VillageBase> poList) {
+        Set<Long> manageIds = poList.stream().map(VillageBase::getManageId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (manageIds.isEmpty()) {
+            return;
         }
-        return real;
+        Map<Long, User> userMap = userMapper.selectBatchIds(manageIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+        for (int i = 0; i < voList.size(); i++) {
+            Long manageId = poList.get(i).getManageId();
+            if (manageId == null) {
+                continue;
+            }
+            User u = userMap.get(manageId);
+            if (u != null) {
+                voList.get(i).setManagerName(u.getUsername());
+            }
+        }
     }
 }

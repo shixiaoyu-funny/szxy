@@ -1,22 +1,26 @@
 package com.shixiaoyu.xiangyueproject.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.shixiaoyu.xiangyueproject.constants.CommonConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserSetInfoDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
-import com.shixiaoyu.xiangyueproject.entity.result.Result;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 
+/**
+ * 登录/注册服务（错误时抛 BusinessException，由全局异常处理器统一返回）
+ */
 public interface LoginService extends IService<User> {
-    Result<String> sendCode(String content,String ip);
 
-    Result<String> phoneLogin(@NotBlank(message = "手机号不能为空") @Pattern(regexp = CommonConstants.PHONE_REGEX,message = "手机号格式错误") String phone, @NotBlank(message = "验证码不能为空") @Pattern(regexp = "^\\d{6}$",message = "验证码格式错误") String code);
+    /** 发送验证码（手机/邮箱），返回提示 */
+    String sendCode(String content, String ip);
 
-    Result<String> emailLogin(@NotBlank(message = "邮箱不能为空") @Email(message = "邮箱格式错误") String email, @NotBlank(message = "验证码不能为空") @Pattern(regexp = "^\\d{6}$",message = "验证码格式错误") String code);
+    /** 手机验证码登录/注册，返回 token */
+    String phoneLogin(String phone, String code);
 
-    Result<String> pwLogin(@NotBlank(message = "用户名不能为空") String username, @NotBlank(message = "密码不能为空") String password);
+    /** 邮箱验证码登录/注册，返回 token */
+    String emailLogin(String email, String code);
 
-    Result<Void> infoSet(UserSetInfoDTO userSetInfoDTO);
+    /** 账密登录，返回 token */
+    String pwLogin(String username, String password);
+
+    /** 个人信息设置（登录后） */
+    void infoSet(UserSetInfoDTO userSetInfoDTO);
 }

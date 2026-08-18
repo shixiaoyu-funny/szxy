@@ -1,9 +1,6 @@
 package com.shixiaoyu.xiangyueproject.entity.vo;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.shixiaoyu.xiangyueproject.enums.CommentShowEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,41 +8,29 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 评论 VO（含评论人用户名）
+ */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Schema(title = "评论VO")
 public class UserCommentVO {
-    /**
-     * 用户名
-     */
+    @Schema(description = "评论人用户名")
     private String username;
-    /**
-     * 评论内容
-     */
+
+    @Schema(description = "评论内容")
     private String content;
 
-    /**
-     * 评分（1-5星）
-     */
+    @Schema(description = "评分（1-5星）")
     private Integer score;
 
-    /**
-     * 评论图片（多图逗号分隔）
-     */
-    @JsonAlias({"comment_img", "commentImg"})
+    @Schema(description = "评论图片URL")
     private String commentImg;
 
-    /**
-     * 创建时间
-     */
-    @JsonAlias({"create_time", "createTime"})
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    @Schema(description = "是否展示：0隐藏 1展示")
+    private CommentShowEnum isShow;
 
-    /**
-     * 是否展示（0-隐藏/1-展示）
-     */
-    @JsonAlias({"is_show", "isShow"})
-    private Integer isShow;
+    @Schema(description = "评论时间")
+    private LocalDateTime createTime;
 }

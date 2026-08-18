@@ -7,16 +7,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 报表接口（管理端）
+ */
 @Slf4j
 @RestController
 @RequestMapping("/report")
@@ -25,93 +26,64 @@ import java.util.List;
 public class ReportController {
     private final ReportService reportService;
     private final PVUVUtils pvuvUtils;
-    private final StringRedisTemplate stringRedisTemplate;
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
-    /**
-     * 农户数量查询
-     * @return
-     */
+
     @GetMapping("/farm")
-    @Operation(summary = "农户数量查询")
-    public Result<Integer> farmCnt(){
-        return reportService.farmCnt();
+    @Operation(summary = "农户数量")
+    public Result<Integer> farmCnt() {
+        return Result.ok(reportService.farmCnt());
     }
 
-    /**
-     * 当天uv查询
-     * @return
-     */
     @GetMapping("/uv")
-    @Operation(summary = "当天uv查询")
-    public Result<Long> passengerFlow(){
-        Long res = pvuvUtils.getUV(LocalDate.now());
-        return Result.ok(res);
+    @Operation(summary = "当天UV")
+    public Result<Long> uv() {
+        return Result.ok(pvuvUtils.getUV(LocalDate.now()));
     }
 
-    /**
-     * 当天pv查询
-     * @return
-     */
     @GetMapping("/pv")
-    @Operation(summary = "当天pv查询")
-    public Result<Long> pv(){
-        Long res = pvuvUtils.getPV(LocalDate.now());
-        return Result.ok(res);
+    @Operation(summary = "当天PV")
+    public Result<Long> pv() {
+        return Result.ok(pvuvUtils.getPV(LocalDate.now()));
     }
 
-    /**
-     * 网站粘性查询
-     * @return
-     */
     @GetMapping("/uvpv")
-    @Operation(summary = "网站粘性查询")
-    public Result<Double> uvpv(){
-        if(pvuvUtils.getPV(LocalDate.now()) == 0){
+    @Operation(summary = "网站粘性（PV/UV）")
+    public Result<Double> uvpv() {
+        long pv = pvuvUtils.getPV(LocalDate.now());
+        long uv = pvuvUtils.getUV(LocalDate.now());
+        if (uv == 0) {
             return Result.ok(0.0);
         }
-        return Result.ok((double)(pvuvUtils.getPV(LocalDate.now()) / pvuvUtils.getUV(LocalDate.now())));
+        return Result.ok(pv / (double) uv);
     }
 
-    /**
-     * 新增景区数量查询
-     * @return
-     */
     @GetMapping("/scenic")
-    @Operation(summary = "新增景区数量查询")
-    public Result<Long> newScenicCnt(){
-        Long size = stringRedisTemplate.opsForHyperLogLog().size("new:scenic" + LocalDate.now().format(DATE_FORMAT));
-        return Result.ok(size);
+    @Operation(summary = "当日新增景点数量")
+    public Result<Integer> newScenicCnt() {
+        return Result.ok(reportService.newScenicCount());
     }
 
-    /**
-     * 新增农村数量查询
-     * @return
-     */
     @GetMapping("/village")
-    @Operation(summary = "新增农户数量查询")
-    public Result<Long> newFarmCnt(){
-        LocalDate now = LocalDate.now();
-        Long size = stringRedisTemplate.opsForHyperLogLog().size("new:village" + now.format(DATE_FORMAT));
-        return Result.ok(size);
+    @Operation(summary = "当日新增农村数量")
+    public Result<Integer> newVillageCnt() {
+        return Result.ok(reportService.newVillageCount());
     }
 
     @GetMapping("/pv7")
-    @Operation(summary = "近7天pv走势查询")
-    public Result<List<Long>> pv7(){
-        List<Long> list=new ArrayList<>();
-        for(int i = 0; i < 7; i++){
-            Long pv = pvuvUtils.getPV(LocalDate.now().minusDays(i));
-            list.add(pv);
+    @Operation(summary = "近7天PV走势")
+    public Result<List<Long>> pv7() {
+        List<Long> list = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            list.add(pvuvUtils.getPV(LocalDate.now().minusDays(i)));
         }
         return Result.ok(list);
     }
+
     @GetMapping("/uv7")
-    @Operation(summary = "近7天uv走势查询")
-    public Result<List<Long>> uv7(){
-        List<Long> list=new ArrayList<>();
-        for(int i = 0; i < 7; i++){
-            Long uv = pvuvUtils.getUV(LocalDate.now().minusDays(i));
-            list.add(uv);
+    @Operation(summary = "近7天UV走势")
+    public Result<List<Long>> uv7() {
+        List<Long> list = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            list.add(pvuvUtils.getUV(LocalDate.now().minusDays(i)));
         }
         return Result.ok(list);
     }

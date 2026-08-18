@@ -3,109 +3,38 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.shixiaoyu.xiangyueproject.mapper.FarmerMapper">
-    <insert id="applyManager">
-        insert into farmer_access (user_id, village_id, farm_name, id_card, type)
-        values (#{userId},#{villageId},#{farmName},#{idCard},#{type})
-    </insert>
 
-    <!-- 步骤 A：通过当前人的 ID 找到对应的村子 ID -->
-    <select id="getVillageIdByManageId" resultType="java.lang.Long">
-        SELECT id FROM village_base WHERE manage_id = #{manageId} LIMIT 1
-    </select>
-
-    <!-- 步骤 B：多表联查，获取农户详情 -->
+    <!-- 某村落下的全部农户（联查 user 取用户名/手机号） -->
     <select id="selectFarmersByVillage" resultType="com.shixiaoyu.xiangyueproject.entity.vo.FarmerUserVO">
         SELECT
-        u.id AS id,              <!-- 取 user 表的 ID -->
-        u.username AS username,  <!-- 取 user 表的 姓名 -->
-        u.phone AS phone,        <!-- 取 user 表的 手机 -->
-        fu.village_id AS villageId, <!-- 取 farm_user 表的 村ID -->
-        fu.farm_name AS farmName,   <!-- 取 farm_user 表的 农场名 -->
-        fu.type AS type,            <!-- 取 farm_user 表的 农户类型 -->
-        fu.status AS status,
-        fu.create_time AS createTime,
-        fu.update_time AS updateTime
+            fu.id            AS id,
+            fu.user_id       AS userId,
+            fu.village_id    AS villageId,
+            fu.business_type AS businessType,
+            u.username       AS username,
+            u.phone          AS phone,
+            fu.create_time   AS createTime,
+            fu.update_time   AS updateTime
         FROM farm_user fu
-        INNER JOIN user u ON fu.user_id = u.id
+        JOIN `user` u ON fu.user_id = u.id
         WHERE fu.village_id = #{villageId}
+        ORDER BY fu.id DESC
     </select>
 
-    <!-- 步骤 A：确认村长身份并拿到村子ID -->
-    <select id="getVillageIdByChiefId" resultType="java.lang.Long">
-        SELECT village_id
-        FROM farm_user
-        WHERE user_id = #{userId} AND type = 2
-            LIMIT 1
-    </select>
-
-    <!-- 步骤 B：查询该村所有农户 -->
-    <select id="selectFarmersByVillageAndType" resultType="com.shixiaoyu.xiangyueproject.entity.vo.FarmerUserVO">
-        SELECT
-        u.id AS id,
-        u.username AS username,
-        u.phone AS phone,
-        fu.farm_name AS farmName,
-        fu.village_id AS villageId,
-        fu.status AS status,
-        fu.type AS type,
-        fu.update_time AS updateTime,
-        fu.create_time AS createTime
-        FROM farm_user fu
-        JOIN user u ON fu.user_id = u.id
-        WHERE fu.village_id = #{villageId}
-        AND fu.type = 1  <!-- 只查农户 -->
-    </select>
-
-    <!-- 修改后的 SQL，删除了所有 create_time 引用 -->
-    <select id="selectFarmerAccessByVillage" resultType="com.shixiaoyu.xiangyueproject.entity.vo.FarmerAccessVO">
-        SELECT
-        fa.id,
-        fa.user_id AS userId,
-        u.username AS username,
-        u.phone AS phone,
-        fa.village_id AS villageId,
-        fa.farm_name AS farmName,
-        fa.id_card AS idCard,
-        fa.type,
-        fa.status,
-        fa.create_time
-        FROM farmer_access fa
-        JOIN user u ON fa.user_id = u.id
-        WHERE fa.village_id = #{villageId}
-        ORDER BY fa.id DESC  <!-- 改用 id 排序，因为没有 create_time -->
-    </select>
-
-    <!-- 获取所有农户列表（管理端） -->
+    <!-- 管理端：全部农户（联查 user） -->
     <select id="selectAllFarmers" resultType="com.shixiaoyu.xiangyueproject.entity.vo.FarmerUserVO">
         SELECT
-        u.id AS id,
-        u.username AS username,
-        u.phone AS phone,
-        fu.farm_name AS farmName,
-        fu.village_id AS villageId,
-        fu.status AS status,
-        fu.type AS type,
-        fu.update_time AS updateTime,
-        fu.create_time AS createTime
+            fu.id            AS id,
+            fu.user_id       AS userId,
+            fu.village_id    AS villageId,
+            fu.business_type AS businessType,
+            u.username       AS username,
+            u.phone          AS phone,
+            fu.create_time   AS createTime,
+            fu.update_time   AS updateTime
         FROM farm_user fu
-        JOIN user u ON fu.user_id = u.id
+        JOIN `user` u ON fu.user_id = u.id
+        ORDER BY fu.id DESC
     </select>
 
-    <!-- 获取所有农户资质申请列表（管理端） -->
-    <select id="selectAllFarmerAccess" resultType="com.shixiaoyu.xiangyueproject.entity.vo.FarmerAccessVO">
-        SELECT
-        fa.id,
-        fa.user_id AS userId,
-        u.username AS username,
-        u.phone AS phone,
-        fa.village_id AS villageId,
-        fa.farm_name AS farmName,
-        fa.id_card AS idCard,
-        fa.type,
-        fa.status,
-        fa.create_time
-        FROM farmer_access fa
-        JOIN user u ON fa.user_id = u.id
-        ORDER BY fa.id DESC
-    </select>
 </mapper>

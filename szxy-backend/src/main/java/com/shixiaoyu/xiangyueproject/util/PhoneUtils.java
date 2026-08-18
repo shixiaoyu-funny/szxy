@@ -1,6 +1,6 @@
 package com.shixiaoyu.xiangyueproject.util;
 
-import com.shixiaoyu.xiangyueproject.config.AliyunProperties;
+import com.shixiaoyu.xiangyueproject.common.properties.AliyunProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -22,7 +22,7 @@ public class PhoneUtils {
         com.aliyun.credentials.Client credential = new com.aliyun.credentials.Client();
         com.aliyun.teaopenapi.models.Config config = new com.aliyun.teaopenapi.models.Config()
                 .setCredential(credential);
-        config.endpoint = aliyunProperties.getEndpointOfInfo();
+        config.endpoint = "dypnsapi.aliyuncs.com";
         config.regionId = aliyunProperties.getRegionId();
         config.accessKeyId = aliyunProperties.getAccessKeyId();
         config.accessKeySecret = aliyunProperties.getAccessKeySecret();
