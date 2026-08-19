@@ -9,12 +9,12 @@ import java.util.List;
 /**
  * 认证/拦截器配置（application.yml auth.*）
  * exclude-path：无需登录即可访问的路径（登录注册、Swagger 文档等）
- * include-path：需要特定权限（管理端 role=4）的路径
+ * admin-path：需要管理员角色（role=4）的路径，由 AdminInterceptor 拦截（当前仅 /report/**）
  */
 @Data
 @Component
 @ConfigurationProperties(prefix = "auth")
 public class AuthProperties {
     private List<String> excludePath;
-    private List<String> includePath;
+    private List<String> adminPath;
 }

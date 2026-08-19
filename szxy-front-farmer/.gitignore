@@ -1,9 +1,0 @@
-# 忽略嵌套后端仓库
-szxy-all-backend/
-# 前端通用忽略
-node_modules/
-dist/
-.history/
-.vscode/
-.DS_Store
-*.log

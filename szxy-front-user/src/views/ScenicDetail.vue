@@ -228,8 +228,8 @@ const fetchUserStatus = async () => {
       isCollect(scenicId.value)
     ]);
     // 严格按照服务端返回：0=未操作，1=已操作
-    isLiked.value = likeRes.data === 1;
-    isCollected.value = collectRes.data === 1;
+    isLiked.value = likeRes.data === true;
+    isCollected.value = collectRes.data === true;
     console.log('✅ 服务端同步状态：', '点赞=', isLiked.value, '收藏=', isCollected.value);
   } catch (err) {
     console.error('❌ 获取用户状态失败:', err);

@@ -2,6 +2,7 @@ package com.shixiaoyu.xiangyueproject.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.shixiaoyu.xiangyueproject.entity.dto.FarmerUserDTO;
@@ -22,7 +23,6 @@ import com.shixiaoyu.xiangyueproject.service.FarmerService;
 import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +46,6 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
     private final UserMapper userMapper;
     private final VillageMapper villageMapper;
     private final ScenicMapper scenicMapper;
-    private final BCryptPasswordEncoder encoder;
 
     @Override
     public List<FarmerUserVO> getFarmersByVillage() {
@@ -130,12 +129,14 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
 
     @Override
     public List<FarmerUserVO> getAllFarmers() {
+        SecurityUtils.requireAdmin();
         return farmerMapper.selectAllFarmers();
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createFarmer(Long villageId, FarmerUserDTO dto) {
+        SecurityUtils.requireAdmin();
         if (villageMapper.selectById(villageId) == null) {
             throw new BusinessException("该村落不存在");
         }
@@ -145,6 +146,7 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void setVillageManager(Long villageId, Long farmerUserId) {
+        SecurityUtils.requireAdmin();
         VillageBase village = villageMapper.selectById(villageId);
         if (village == null) {
             throw new BusinessException("该村落不存在");
@@ -155,6 +157,10 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
         }
         if (getFarmerByUserId(farmerUserId) == null) {
             throw new BusinessException("该用户还不是农户，请先在村内建档");
+        }
+        FarmerUser target = getFarmerByUserId(farmerUserId);
+        if (!villageId.equals(target.getVillageId())) {
+            throw new BusinessException("操作失败：该农户不属于目标村落");
         }
         Long oldChiefId = village.getManageId();
         if (oldChiefId != null && !oldChiefId.equals(farmerUserId)) {
@@ -218,7 +224,7 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
         User user = new User();
         user.setUsername(username);
         user.setPhone(dto.getPhone());
-        user.setPassword(encoder.encode(DEFAULT_PASSWORD));
+        user.setPassword(BCrypt.hashpw(DEFAULT_PASSWORD));
         user.setRole(RoleEnum.FARMER);
         user.setStatus(1);
         userMapper.insert(user);

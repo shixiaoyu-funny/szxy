@@ -147,6 +147,13 @@ const handlePwLogin = async () => {
     try {
       const info = await userApi.getInfo();
       store.actions.updateUserInfo(info);
+      // 仅管理员（role=4）可进入管理端
+      if (info?.role !== 4) {
+        ElMessage.error('仅管理员可登录管理端');
+        store.actions.logout();
+        loading.value = false;
+        return;
+      }
     } catch {
       /* 非致命 */
     }
@@ -169,6 +176,13 @@ const handlePhoneLogin = async () => {
     try {
       const info = await userApi.getInfo();
       store.actions.updateUserInfo(info);
+      // 仅管理员（role=4）可进入管理端
+      if (info?.role !== 4) {
+        ElMessage.error('仅管理员可登录管理端');
+        store.actions.logout();
+        loading.value = false;
+        return;
+      }
     } catch {
       /* 非致命 */
     }
@@ -191,6 +205,13 @@ const handleEmailLogin = async () => {
     try {
       const info = await userApi.getInfo();
       store.actions.updateUserInfo(info);
+      // 仅管理员（role=4）可进入管理端
+      if (info?.role !== 4) {
+        ElMessage.error('仅管理员可登录管理端');
+        store.actions.logout();
+        loading.value = false;
+        return;
+      }
     } catch {
       /* 非致命 */
     }

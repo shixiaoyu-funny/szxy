@@ -3,7 +3,6 @@
     <header class="village-header">
       <button class="back-btn" @click="goBack">←</button>
       <h1 class="header-title">优质农村</h1>
-      <Location />
     </header>
     
     <div class="village-tabs">
@@ -72,7 +71,6 @@
 import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getTopVillageByLikes, getTopVillageByCollections } from '../api/village';
-import Location from '../components/Location.vue';
 
 interface Village {
   id: number;

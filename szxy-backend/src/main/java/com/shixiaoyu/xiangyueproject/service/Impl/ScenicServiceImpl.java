@@ -134,6 +134,7 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public PageResultVO<ScenicVO> adminList(PageResultDTO pageResultDTO) {
+        SecurityUtils.requireAdmin();
         int pageNo = pageResultDTO.getPageNo() == null || pageResultDTO.getPageNo() < 1 ? 1 : pageResultDTO.getPageNo();
         int pageSize = pageResultDTO.getPageSize() == null || pageResultDTO.getPageSize() < 1 ? 10 : pageResultDTO.getPageSize();
         Page<VillageScenic> page = scenicMapper.selectPage(Page.of(pageNo, pageSize),
@@ -146,6 +147,7 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public void adminAdd(Long villageId, ScenicDTO dto) {
+        SecurityUtils.requireAdmin();
         if (villageMapper.selectById(villageId) == null) {
             throw new BusinessException("该村落不存在");
         }
@@ -165,6 +167,7 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public void adminUpdate(Long id, ScenicDTO dto) {
+        SecurityUtils.requireAdmin();
         if (scenicMapper.selectById(id) == null) {
             throw new BusinessException(ErrorConstants.DATA_NOT_EXIST);
         }
@@ -175,6 +178,7 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public void adminDelete(Long id) {
+        SecurityUtils.requireAdmin();
         if (scenicMapper.deleteById(id) != 1) {
             throw new BusinessException(ErrorConstants.ERROR_DELETE);
         }

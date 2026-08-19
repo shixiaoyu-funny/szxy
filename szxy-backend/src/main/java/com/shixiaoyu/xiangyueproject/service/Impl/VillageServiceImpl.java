@@ -24,6 +24,7 @@ import com.shixiaoyu.xiangyueproject.mapper.ScenicMapper;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.VillageService;
+import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -71,6 +72,7 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
 
     @Override
     public void addVillage(VillageBaseDTO dto) {
+        SecurityUtils.requireAdmin();
         if (dto == null) {
             throw new BusinessException(ErrorConstants.INSERT_NULL);
         }
@@ -82,6 +84,7 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
 
     @Override
     public void updateVillage(Long id, VillageBaseDTO dto) {
+        SecurityUtils.requireAdmin();
         if (id == null) {
             throw new BusinessException(ErrorConstants.NULL_ID);
         }
@@ -97,8 +100,12 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
 
     @Override
     public void deleteVillage(Long id) {
+        SecurityUtils.requireAdmin();
         if (id == null) {
             throw new BusinessException(ErrorConstants.NULL_ID);
+        }
+        if (getById(id) == null) {
+            throw new BusinessException(ErrorConstants.DATA_NOT_EXIST);
         }
         if (!removeById(id)) {
             throw new BusinessException(ErrorConstants.ERROR_DELETE);

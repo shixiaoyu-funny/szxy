@@ -92,9 +92,8 @@ auth:
     - /swagger-ui/**
     - /favicon.ico
     - /error
-  # 需要管理端权限（role=4）的路径
-  include-path:
-    - /admin/**
+  # 需要管理端权限（role=4）的路径，由 AdminInterceptor 统一拦截
+  admin-path:
     - /report/**
 
 aliyun:

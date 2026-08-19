@@ -29,7 +29,7 @@ public class FreshInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String token = request.getHeader("authorization");
+        String token = request.getHeader("access_token");
         if (token != null && !token.isBlank()) {
             stringRedisTemplate.expire(RedisConstants.LOGIN_TOKEN_PREFIX + token,
                     RedisConstants.TOKEN_EXPIRE_TIME, TimeUnit.MINUTES);

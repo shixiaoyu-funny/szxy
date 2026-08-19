@@ -2,14 +2,13 @@
   <div class="profile-container">
     <header class="profile-header">
       <h1 class="header-title">个人中心</h1>
-      <Location />
     </header>
 
     <div class="profile-content">
       <!-- 用户信息 -->
       <div class="user-info-card">
         <div class="user-avatar">
-          <img :src="userInfo.avator || defaultAvatar" :alt="userInfo.username" />
+          <img :src="userInfo.avatar || defaultAvatar" :alt="userInfo.username" />
         </div>
         <h2 class="user-name">{{ userInfo.username || '未登录' }}</h2>
         <p class="user-email">{{ userInfo.email || userInfo.phone || '未设置' }}</p>
@@ -21,8 +20,8 @@
             </span>
           </span>
           <span class="meta-item">
-            <span class="meta-label">用户类型：</span>
-            <span class="meta-value">{{ getUserTypeText(userInfo.type) }}</span>
+            <span class="meta-label">角色：</span>
+            <span class="meta-value">{{ getRoleText(userInfo.role) }}</span>
           </span>
         </div>
       </div>
@@ -32,6 +31,21 @@
         <div class="function-item" @click="editProfile">
           <span class="function-icon">✏️</span>
           <span class="function-text">编辑个人信息</span>
+          <span class="function-arrow">→</span>
+        </div>
+        <div v-if="isFarmerOrChief" class="function-item" @click="myVillage">
+          <span class="function-icon">🏘️</span>
+          <span class="function-text">我的村</span>
+          <span class="function-arrow">→</span>
+        </div>
+        <div v-if="isFarmerOrChief" class="function-item" @click="myScenics">
+          <span class="function-icon">🗻</span>
+          <span class="function-text">我的景点</span>
+          <span class="function-arrow">→</span>
+        </div>
+        <div v-if="isChief" class="function-item" @click="villageFarmers">
+          <span class="function-icon">👥</span>
+          <span class="function-text">本村农户管理</span>
           <span class="function-arrow">→</span>
         </div>
         <div class="function-item" @click="viewCollections">
@@ -78,9 +92,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
-import { getLikes, getCollects, getComments } from '../api/profile';
 import { getUserInfo } from '../api/user';
-import Location from '../components/Location.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -90,6 +102,11 @@ const userInfo = computed(() => {
   return userStore.userInfo || {};
 });
 
+const role = computed(() => userInfo.value.role);
+
+const isFarmerOrChief = computed(() => role.value === 2 || role.value === 3);
+const isChief = computed(() => role.value === 3);
+
 const goBack = () => {
   router.back();
 };
@@ -97,6 +114,18 @@ const goBack = () => {
 const editProfile = () => {
   // 跳转到编辑个人信息页面
   router.push('/edit-profile');
+};
+
+const myVillage = () => {
+  router.push('/farmer/village');
+};
+
+const myScenics = () => {
+  router.push('/farmer/scenics');
+};
+
+const villageFarmers = () => {
+  router.push('/farmer/farmers');
 };
 
 const viewCollections = () => {
@@ -122,22 +151,24 @@ const goToLogin = () => {
   router.push('/login');
 };
 
-// 获取用户类型文本
-const getUserTypeText = (type: number) => {
-  switch (type) {
+// 获取角色文本
+const getRoleText = (roleValue: number) => {
+  switch (roleValue) {
     case 1:
-      return '普通用户';
+      return '游客';
     case 2:
       return '农户';
     case 3:
+      return '村长';
+    case 4:
       return '管理员';
     default:
       return '未知';
   }
 };
 
-// 用户端仅允许普通用户（type === 1）；与后端不一致时退回登录并提示
-const USER_APP_EXPECTED_TYPE = 1;
+// 用户端不允许管理员（role=4）；游客/农户/村长均可使用
+const USER_APP_DENIED_ROLE = 4;
 
 // 加载用户信息
 const loadUserInfo = async () => {
@@ -146,7 +177,7 @@ const loadUserInfo = async () => {
     const res = await getUserInfo();
     console.log('用户信息响应:', res);
     if (res.data) {
-      if (res.data.type !== USER_APP_EXPECTED_TYPE) {
+      if (res.data.role === USER_APP_DENIED_ROLE) {
         ElMessage.error('权限不足，无法访问！');
         userStore.logout();
         router.replace('/login');

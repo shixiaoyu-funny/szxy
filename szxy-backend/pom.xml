@@ -80,11 +80,6 @@
             <artifactId>hutool-all</artifactId>
             <version>${hutool.version}</version>
         </dependency>
-        <!-- BCrypt 密码加密（原来自 spring-security-rsa 传递，现显式声明） -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-        </dependency>
         <!-- 邮箱 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

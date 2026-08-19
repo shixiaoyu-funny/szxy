@@ -10,7 +10,7 @@ const service = axios.create({
 service.interceptors.request.use(
   (config) => {
     if (store.state.user.token) {
-      config.headers['Authorization'] = `${store.state.user.token}`;
+      config.headers['access_token'] = `${store.state.user.token}`;
     }
     return config;
   },
@@ -34,11 +34,14 @@ service.interceptors.response.use(
       store.actions.logout();
       router.push('/login');
     }
+    if (error.response?.status === 403) {
+      return Promise.reject(new Error(error.response.data?.message || '权限不足：仅管理员可访问'));
+    }
     return Promise.reject(error);
   }
 );
 
-/** 报表（对应 ReportController `/report`） */
+/** 报表（对应 ReportController `/report`，AdminInterceptor 拦截 role=4） */
 export const reportApi = {
   /** 农户总数 */
   getFarmCount: (): Promise<number> => service.get('/report/farm'),
@@ -48,9 +51,9 @@ export const reportApi = {
   getPv: (): Promise<number> => service.get('/report/pv'),
   /** UV/PV 比值（粘性） */
   getUvpv: (): Promise<number> => service.get('/report/uvpv'),
-  /** 当日新增景区（HyperLogLog） */
+  /** 当日新增景区（DB 按 create_time 计数） */
   getNewScenicCount: (): Promise<number> => service.get('/report/scenic'),
-  /** 当日新增农村（HyperLogLog，接口名 newFarmCnt 为后端历史命名） */
+  /** 当日新增农村 */
   getNewVillageCount: (): Promise<number> => service.get('/report/village'),
   /** 近 7 天 PV（索引 0 为当天，依次往前一日） */
   getPv7: (): Promise<number[]> => service.get('/report/pv7'),
@@ -58,52 +61,60 @@ export const reportApi = {
   getUv7: (): Promise<number[]> => service.get('/report/uv7')
 };
 
+/** 登录（`/lg`） */
 export const loginApi = {
   sendCode: (content: string): Promise<string> =>
-    service.post('/common/login/sendcode', null, { params: { content } }),
+    service.post('/lg/sdcode', null, { params: { content } }),
   phoneLogin: (phone: string, code: string): Promise<string> =>
-    service.post('/common/login/phone_login', null, { params: { phone, code } }),
+    service.post('/lg/ph', null, { params: { phone, code } }),
   emailLogin: (email: string, code: string): Promise<string> =>
-    service.post('/common/login/email_login', null, { params: { email, code } }),
+    service.post('/lg/em', null, { params: { email, code } }),
   pwLogin: (username: string, password: string): Promise<string> =>
-    service.post('/common/login/pw_login', null, { params: { username, password } }),
-  infoSet: (data: Record<string, unknown>): Promise<unknown> => service.post('/common/login/info_set', data),
-  logout: (): Promise<unknown> => service.post('/common/login/logout')
+    service.post('/lg/pw', null, { params: { username, password } }),
+  infoSet: (data: Record<string, unknown>): Promise<unknown> => service.post('/lg/infoset', data),
+  logout: (): Promise<unknown> => service.post('/lg/lgout')
 };
 
+/** 用户（`/ur`） */
 export const userApi = {
-  getInfo: (): Promise<Record<string, unknown>> => service.get('/user/info')
+  getInfo: (): Promise<Record<string, unknown>> => service.get('/ur/info')
 };
 
-/** 景点资质申请列表：ScenicController GET `/scenic/list` */
+/** 景点管理（`/sc`，Service 层 requireAdmin 校验 role=4） */
 export const scenicApi = {
-  getScenicAccessList: (): Promise<unknown[]> => service.get('/scenic/list')
+  /** 分页全部景点 */
+  getList: (pageResultDTO: { pageNo: number; pageSize: number }): Promise<{ total: number; data: unknown[] }> =>
+    service.get('/sc/ls', { params: pageResultDTO }),
+  /** 新增景点到指定村落 */
+  add: (villageId: number, body: Record<string, unknown>): Promise<unknown> =>
+    service.post('/sc/new', body, { params: { village_id: villageId } }),
+  /** 修改景点 */
+  update: (id: number, body: Record<string, unknown>): Promise<unknown> =>
+    service.post(`/sc/modify/${id}`, body),
+  /** 删除景点 */
+  remove: (id: number): Promise<unknown> =>
+    service.post(`/sc/del/${id}`)
 };
 
-/** 农村管理：VillageController `/admin/village` */
+/** 农村管理（`/vlg`，Service 层 requireAdmin 校验 role=4） */
 export const villageApi = {
   getVillageList: (pageResultDTO: { pageNo: number; pageSize: number }): Promise<{ total: number; data: unknown[] }> =>
-    service.get('/admin/village/list', { params: pageResultDTO }),
-  addVillage: (body: Record<string, unknown>): Promise<unknown> => service.post('/admin/village', body),
-  updateVillage: (id: number, body: Record<string, unknown>): Promise<unknown> => service.put(`/admin/village/${id}`, body),
-  deleteVillage: (id: number): Promise<unknown> => service.delete(`/admin/village/${id}`)
+    service.get('/vlg/ls', { params: pageResultDTO }),
+  addVillage: (body: Record<string, unknown>): Promise<unknown> => service.post('/vlg/new', body),
+  updateVillage: (id: number, body: Record<string, unknown>): Promise<unknown> => service.post(`/vlg/modify/${id}`, body),
+  deleteVillage: (id: number): Promise<unknown> => service.post(`/vlg/del/${id}`)
 };
 
-/**
- * 管理端农户与资质审批：AdminFarmerController `/admin/farmer`
- * 说明：本村增删改农户为村长端能力（`/farmer`），管理端仅做全量列表与审批。
- */
+/** 农户管理（`/fmr`，Service 层 requireAdmin 校验 role=4） */
 export const farmerApi = {
-  getFarmers: (): Promise<unknown[]> => service.get('/admin/farmer/list'),
-  getFarmerAccessList: (): Promise<unknown[]> => service.get('/admin/farmer/farmer_access'),
-  getManagerAccessList: (): Promise<unknown[]> => service.get('/admin/farmer/manager_access'),
-  /** status: 1 通过, 2 拒绝（与后端 solve* 一致） */
-  processFarmerAccess: (id: number, status: number): Promise<unknown> =>
-    service.post(`/admin/farmer/farmer_access/${id}`, null, { params: { status } }),
-  processManagerAccess: (id: number, status: number): Promise<unknown> =>
-    service.post(`/admin/farmer/manager_access/${id}`, null, { params: { status } }),
-  processScenicAccess: (id: number, status: number): Promise<unknown> =>
-    service.post(`/admin/farmer/scenic_access/${id}`, null, { params: { status } })
+  /** 全部农户列表 */
+  getFarmers: (): Promise<unknown[]> => service.get('/fmr/all'),
+  /** 建档农户（任意村，默认密码 123456） */
+  createFarmer: (villageId: number, body: Record<string, unknown>): Promise<unknown> =>
+    service.post('/fmr/create', body, { params: { village_id: villageId } }),
+  /** 任命/更换村长 */
+  setManager: (villageId: number, farmerUserId: number): Promise<unknown> =>
+    service.post('/fmr/set-manager', null, { params: { village_id: villageId, farmer_user_id: farmerUserId } })
 };
 
 export const uploadApi = {

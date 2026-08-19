@@ -3,7 +3,6 @@
     <header class="my-header">
       <button class="back-btn" @click="goBack">←</button>
       <h1 class="header-title">我的评论</h1>
-      <Location />
     </header>
 
     <div v-if="loading" class="loading-container">
@@ -51,7 +50,6 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { getComments } from '../api/profile';
-import Location from '../components/Location.vue';
 
 interface ScenicVO {
   id: number;

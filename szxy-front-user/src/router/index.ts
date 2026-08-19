@@ -14,21 +14,6 @@ const router = createRouter({
       component: () => import('../views/Login.vue')
     },
     {
-      path: '/ai/recommend',
-      name: 'aiRecommend',
-      component: () => import('../views/ai/Recommend.vue')
-    },
-    {
-      path: '/ai/inquire',
-      name: 'aiInquire',
-      component: () => import('../views/ai/Inquire.vue')
-    },
-    {
-      path: '/ai/multimodal',
-      name: 'aiMultimodal',
-      component: () => import('../views/ai/Multimodal.vue')
-    },
-    {
       path: '/scenic/:id',
       name: 'scenicDetail',
       component: () => import('../views/ScenicDetail.vue')
@@ -67,6 +52,26 @@ const router = createRouter({
       path: '/my-likes',
       name: 'myLikes',
       component: () => import('../views/MyLikes.vue')
+    },
+    {
+      path: '/farmer/village',
+      name: 'myVillage',
+      component: () => import('../views/farmer/MyVillage.vue')
+    },
+    {
+      path: '/farmer/scenics',
+      name: 'myScenics',
+      component: () => import('../views/farmer/MyScenics.vue')
+    },
+    {
+      path: '/farmer/scenic/add',
+      name: 'addScenic',
+      component: () => import('../views/farmer/AddScenic.vue')
+    },
+    {
+      path: '/farmer/farmers',
+      name: 'villageFarmers',
+      component: () => import('../views/farmer/VillageFarmers.vue')
     }
   ]
 })

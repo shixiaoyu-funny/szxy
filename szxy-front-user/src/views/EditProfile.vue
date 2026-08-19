@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="edit-profile-container">
     <header class="edit-profile-header">
       <button type="button" class="back-btn" @click="goBack">←</button>
@@ -13,7 +13,7 @@
       <div class="avatar-section">
         <div class="user-avatar">
           <!-- 这里优先显示本地预览 -->
-          <img :src="localPreviewUrl || formData.avator || defaultAvatar" :alt="formData.username" />
+          <img :src="localPreviewUrl || formData.avatar || defaultAvatar" :alt="formData.username" />
           <button type="button" class="avatar-edit" @click="triggerFileInput">
             <span>📷</span>
           </button>
@@ -72,7 +72,7 @@ const formData = ref({
   password: '',
   phone: '',
   email: '',
-  avator: ''
+  avatar: ''
 });
 
 const goBack = () => {
@@ -114,7 +114,7 @@ const handleAvatarUpload = async (event: Event) => {
     }
 
     // ✅ 第三步：赋值并清理预览
-    formData.value.avator = imageUrl;
+    formData.value.avatar = imageUrl;
     ElMessage.success('头像上传成功！');
 
   } catch (error) {
@@ -161,7 +161,7 @@ onMounted(() => {
       password: '',
       phone: userStore.userInfo.phone || '',
       email: userStore.userInfo.email || '',
-      avator: userStore.userInfo.avatar || ''
+      avatar: userStore.userInfo.avatar || ''
     };
   }
 });

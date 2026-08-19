@@ -12,7 +12,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
  *         （所属村 = farm_user.village_id）
  * 3 村长  CHIEF：管理员通过 set_manager 任命；农户全部能力 + 本村农户管理（增改删）
  *         （village_base.manage_id 指向其 user.id，与 role 在事务内同步）
- * 4 管理员 ADMIN：种子数据预置；拥有 /admin/** 全部权限（农村CRUD/农户建档/村长任命/景点CRUD/报表）
+ * 4 管理员 ADMIN：种子数据预置；拥有全部管理端能力（农村CRUD/农户建档/村长任命/景点CRUD/报表），
+ *         AdminInterceptor + SecurityUtils.requireAdmin() 双重校验
  * </pre>
  *
  * 约束力：字段类型为强类型枚举，非法角色值编译不过；DB 侧由 schema.sql 的

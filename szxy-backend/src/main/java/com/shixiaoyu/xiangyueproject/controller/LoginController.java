@@ -85,7 +85,7 @@ public class LoginController {
     @Operation(summary = "退出登录")
     @PostMapping("/lgout")
     public Result<Void> logout(HttpServletRequest request) {
-        String token = request.getHeader("authorization");
+        String token = request.getHeader("access_token");
         if (StrUtil.isNotBlank(token)) {
             stringRedisTemplate.delete(RedisConstants.LOGIN_TOKEN_PREFIX + token);
         }

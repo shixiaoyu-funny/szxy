@@ -475,16 +475,21 @@ UNIQUE(user_id, scenic_id)
 
 ### 6.1 接口清单
 
+> 实际实现采用短路径（`/lg` `/ur` `/fmr` `/sc` `/vlg`），管理端方法与用户端同 Controller 共存，靠
+> `SecurityUtils.requireAdmin()`（Service 层）与 `AdminInterceptor`（`/report/**`）校验 role=4。
+> 完整映射见 `docs/roles.md`。
+
 ```
-/common/login  sendcode | phone_login | email_login | pw_login | info_set | logout
-/user          info | comment | like | isLike | collect | isCollect | search | likes | comments | collection
-/farmer        list(本村农户) | add | update | delete(仅村长,role=3) | village(我的村) | scenic(我的景点)
-/scenic        register(农户/村长在所属村新增) | top10 | detail | sc_comments
-/admin/village list | add | update | delete | likes(top10) | collections(top10)
-/admin/farmer  list | create(建 user+farm_user,默认密码123456) | set_manager(任命/换村长)
-/admin/scenic  list | add | update | delete            ← 新增 AdminScenicController
-/report        farmCnt | uv | pv | uvpv | pv7 | uv7 | village | scenic(当天新增,按 create_time 查库)
-/upload        (保留)
+/lg           sdcode | ph | em | pw | infoset | lgout        （登录注册，public）
+/ur           info | comment | like/{id} | collect/{id} | isLike | isCollect | search | like | comment | collection
+/fmr          用户端: ls(本村农户) | new | modify/{id} | remote/{id} | vlg(我的村) | sc(我的景点)
+              管理端: all(全部农户) | create(建档) | set-manager(任命/换村长)
+/sc           用户端: rg(农户/村长在所属村新增) | top10 | detail | sccomments
+              管理端: ls | new | modify/{id} | del/{id}
+/vlg          ls | likes(top10) | collections(top10)   （公开只读）
+              管理端(写): new | modify/{id} | del/{id}  ← requireAdmin
+/report       farm | uv | pv | uvpv | scenic | village | pv7 | uv7   （AdminInterceptor 拦截）
+/upload       （保留）
 ```
 
 ### 6.2 删除的接口

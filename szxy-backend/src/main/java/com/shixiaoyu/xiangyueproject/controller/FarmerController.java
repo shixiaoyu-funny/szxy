@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * 农户接口（村长操作本村农户 + 管理端建档/任命）
- * 管理端方法使用绝对路径 /admin/farmer/**，由 LoginInterceptor 校验 role=4
+ * 管理端方法（/fmr/all、/fmr/create、/fmr/set-manager）由 Service 层 SecurityUtils.requireAdmin() 校验 role=4
  */
 @Slf4j
 @RestController
@@ -78,15 +78,15 @@ public class FarmerController {
         return Result.ok(farmerService.getMyScenics());
     }
 
-    // ==================== 管理端（LoginInterceptor 校验 role=4） ====================
+    // ==================== 管理端（Service 层 SecurityUtils.requireAdmin() 校验 role=4） ====================
 
-    @GetMapping("/admin/farmer/list")
+    @GetMapping("/all")
     @Operation(summary = "管理端：获取所有农户列表")
     public Result<List<FarmerUserVO>> getAllFarmers() {
         return Result.ok(farmerService.getAllFarmers());
     }
 
-    @PostMapping("/admin/farmer")
+    @PostMapping("/create")
     @Operation(summary = "管理端：建档农户（创建账号+档案，默认密码 123456）")
     public Result<Void> createFarmer(
             @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,
@@ -95,7 +95,7 @@ public class FarmerController {
         return Result.ok();
     }
 
-    @PostMapping("/admin/farmer/set_manager")
+    @PostMapping("/set-manager")
     @Operation(summary = "管理端：任命/更换村长（事务内同步 manage_id 与角色）")
     public Result<Void> setManager(
             @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,

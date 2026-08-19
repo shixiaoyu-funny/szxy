@@ -1,15 +1,13 @@
 package com.shixiaoyu.xiangyueproject.service.Impl;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shixiaoyu.xiangyueproject.constants.CommonConstants;
 import com.shixiaoyu.xiangyueproject.constants.ErrorConstants;
 import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
-import com.shixiaoyu.xiangyueproject.entity.dto.UserDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserSetInfoDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.enums.RoleEnum;
@@ -17,6 +15,7 @@ import com.shixiaoyu.xiangyueproject.exception.BusinessException;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.service.LoginService;
 import com.shixiaoyu.xiangyueproject.util.FlowUtils;
+import com.shixiaoyu.xiangyueproject.util.TokenUtil;
 import com.shixiaoyu.xiangyueproject.util.UserHolder;
 import com.shixiaoyu.xiangyueproject.util.VerifyUtils;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -42,8 +40,8 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
     private final AmqpTemplate amqpTemplate;
     private final StringRedisTemplate stringRedisTemplate;
     private final UserMapper userMapper;
-    private final BCryptPasswordEncoder encoder;
     private final ObjectMapper objectMapper;
+    private final TokenUtil tokenUtil;
 
     @Override
     public String sendCode(String content, String ip) {
@@ -109,7 +107,7 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
                 userMapper.insert(user);
                 log.info("创建手机用户成功，phone:{}", phone);
             }
-            return issueToken(user);
+            return tokenUtil.issue(user);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -136,7 +134,7 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
                 userMapper.insert(user);
                 log.info("创建邮箱用户成功，email:{}", email);
             }
-            return issueToken(user);
+            return tokenUtil.issue(user);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -156,17 +154,17 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
             log.warn("用户:{} 已被禁用", username);
             throw new BusinessException("账号已被禁用");
         }
-        if (!encoder.matches(password, user.getPassword())) {
+        if (!BCrypt.checkpw(password, user.getPassword())) {
             log.warn("用户:{} 密码错误", username);
             throw new BusinessException(ErrorConstants.PASSWORD_ERROR);
         }
-        return issueToken(user);
+        return tokenUtil.issue(user);
     }
 
     @Override
     public void infoSet(UserSetInfoDTO userSetInfoDTO) {
         if (userSetInfoDTO.getPassword() != null && !userSetInfoDTO.getPassword().isBlank()) {
-            userSetInfoDTO.setPassword(encoder.encode(userSetInfoDTO.getPassword()));
+            userSetInfoDTO.setPassword(BCrypt.hashpw(userSetInfoDTO.getPassword()));
         } else {
             userSetInfoDTO.setPassword(null);
         }
@@ -187,20 +185,5 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
         user.setStatus(1);
         user.setAvatar(CommonConstants.COMMON_AVATOR);
         return user;
-    }
-
-    /** 生成 token 并存入 Redis */
-    private String issueToken(User user) {
-        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
-        String token = UUID.randomUUID().toString(true);
-        String key = RedisConstants.LOGIN_TOKEN_PREFIX + token;
-        try {
-            stringRedisTemplate.opsForValue().set(
-                    key, objectMapper.writeValueAsString(userDTO), RedisConstants.TOKEN_EXPIRE_TIME, TimeUnit.MINUTES);
-        } catch (Exception e) {
-            log.error("token 序列化失败", e);
-            throw new BusinessException("登录失败，请重试");
-        }
-        return token;
     }
 }

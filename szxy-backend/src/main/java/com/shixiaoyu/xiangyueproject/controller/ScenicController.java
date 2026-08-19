@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * 景点接口（用户端 + 管理端）
- * 管理端方法使用绝对路径 /admin/scenic/**，由 LoginInterceptor 校验 role=4
+ * 管理端方法（/sc/ls、/sc/new、/sc/modify/{id}、/sc/del/{id}）由 Service 层 SecurityUtils.requireAdmin() 校验 role=4
  */
 @Slf4j
 @RestController
@@ -62,15 +62,15 @@ public class ScenicController {
         return Result.ok(scenicService.getScComments(id));
     }
 
-    // ==================== 管理端（LoginInterceptor 校验 role=4） ====================
+    // ==================== 管理端（Service 层 SecurityUtils.requireAdmin() 校验 role=4） ====================
 
-    @GetMapping("/admin/scenic/list")
+    @GetMapping("/ls")
     @Operation(summary = "管理端：分页查询全部景点")
     public Result<PageResultVO<ScenicVO>> adminList(PageResultDTO pageResultDTO) {
         return Result.ok(scenicService.adminList(pageResultDTO));
     }
 
-    @PostMapping("/admin/scenic")
+    @PostMapping("/new")
     @Operation(summary = "管理端：直接新增景点到指定村落")
     public Result<Void> adminAdd(
             @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,
@@ -79,7 +79,7 @@ public class ScenicController {
         return Result.ok();
     }
 
-    @PostMapping("/admin/scenic/modify/{id}")
+    @PostMapping("/modify/{id}")
     @Operation(summary = "管理端：修改景点")
     public Result<Void> adminUpdate(
             @Parameter(description = "景点id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id,
@@ -88,7 +88,7 @@ public class ScenicController {
         return Result.ok();
     }
 
-    @PostMapping("/admin/scenic/del/{id}")
+    @PostMapping("/del/{id}")
     @Operation(summary = "管理端：删除景点")
     public Result<Void> adminDelete(
             @Parameter(description = "景点id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id) {

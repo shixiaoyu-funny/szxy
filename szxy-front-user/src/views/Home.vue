@@ -3,7 +3,6 @@
     <!-- 顶部导航 -->
     <header class="home-header">
       <h1 class="header-title">首页</h1>
-      <Location />
     </header>
 
     <!-- 搜索栏 -->
@@ -149,7 +148,6 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { getTopScenic } from '../api/scenic';
 import { getTopVillageByLikes } from '../api/village';
-import Location from '../components/Location.vue';
 
 interface Scenic {
   id: number;
@@ -207,8 +205,11 @@ const navigateToVillageDetail = (id: number) => {
 };
 
 const search = () => {
-  // 搜索功能实现
-  console.log('搜索:', searchQuery.value);
+  if (!searchQuery.value?.trim()) return;
+  router.push({
+    path: '/village',
+    query: { q: searchQuery.value.trim() }
+  });
 };
 
 const fetchScenicList = async () => {

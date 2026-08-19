@@ -29,7 +29,7 @@ const router = createRouter({
           path: 'scenic',
           name: 'scenic',
           component: () => import('../views/Scenic.vue'),
-          meta: { title: '景点资质审批' }
+          meta: { title: '景点管理' }
         },
         {
           path: 'village',
@@ -41,7 +41,7 @@ const router = createRouter({
           path: 'farmer',
           name: 'farmer',
           component: () => import('../views/Farmer.vue'),
-          meta: { title: '农户与村长资质' }
+          meta: { title: '农户管理' }
         },
         {
           path: 'profile',

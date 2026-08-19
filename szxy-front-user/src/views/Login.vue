@@ -158,9 +158,9 @@ const phoneLogin = async () => {
     const userInfo = userRes.data;
     userStore.setUserInfo(userInfo);
 
-    // 校验用户类型是否为用户
-    if (userInfo.type !== 1) {
-      errorMessage.value = '权限校验失败，仅用户可登录';
+    // 校验角色：管理员请前往管理端，游客/农户/村长可用本端
+    if (userInfo.role === 4) {
+      errorMessage.value = '管理员请前往管理端登录';
       userStore.logout();
       loading.value = false;
       return;
@@ -190,9 +190,9 @@ const emailLogin = async () => {
     const userInfo = userRes.data;
     userStore.setUserInfo(userInfo);
 
-    // 校验用户类型是否为用户
-    if (userInfo.type !== 1) {
-      errorMessage.value = '权限校验失败，仅用户可登录';
+    // 校验角色：管理员请前往管理端，游客/农户/村长可用本端
+    if (userInfo.role === 4) {
+      errorMessage.value = '管理员请前往管理端登录';
       userStore.logout();
       loading.value = false;
       return;
@@ -222,9 +222,9 @@ const pwLogin = async () => {
     const userInfo = userRes.data;
     userStore.setUserInfo(userInfo);
 
-    // 校验用户类型是否为用户
-    if (userInfo.type !== 1) {
-      errorMessage.value = '权限校验失败，仅用户可登录';
+    // 校验角色：管理员请前往管理端，游客/农户/村长可用本端
+    if (userInfo.role === 4) {
+      errorMessage.value = '管理员请前往管理端登录';
       userStore.logout();
       loading.value = false;
       return;
