@@ -1,13 +1,5 @@
 ﻿<template>
   <div class="edit-profile-container">
-    <header class="edit-profile-header">
-      <button type="button" class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">编辑个人信息</h1>
-      <button type="button" class="save-btn" @click="saveProfile" :disabled="saving">
-        {{ saving ? '保存中...' : '保存' }}
-      </button>
-    </header>
-
     <div class="edit-profile-content">
       <!-- 头像上传 -->
       <div class="avatar-section">
@@ -44,6 +36,10 @@
           <label class="form-label">邮箱</label>
           <input type="email" v-model="formData.email" class="form-input" placeholder="请输入邮箱" :disabled="saving" />
         </div>
+
+        <button type="button" class="save-btn" @click="saveProfile" :disabled="saving">
+          {{ saving ? '保存中...' : '保存' }}
+        </button>
       </form>
     </div>
   </div>

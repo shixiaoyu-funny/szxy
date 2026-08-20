@@ -1,5 +1,6 @@
 <template>
   <div class="login-container">
+    <div class="login-bg-sky" aria-hidden="true" />
     <div class="login-card">
       <h1 class="login-title">数智乡约</h1>
       <p class="login-subtitle">AI 驱动乡村振兴服务平台 - 用户端</p>
@@ -240,36 +241,72 @@ const pwLogin = async () => {
 
 <style scoped>
 .login-container {
-  min-height: 100vh;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 100vh;
   padding: 20px;
-  background: linear-gradient(-45deg, #11998e, #38ef7d, #11998e, #38ef7d);
-  background-size: 400% 400%;
-  animation: gradientBG 15s ease infinite;
+  overflow: hidden;
+  background: linear-gradient(155deg, #e8f5e9 0%, #fafff9 42%, #c8e6c9 100%);
 }
 
-@keyframes gradientBG {
+/* 绿意流动质感 + 右上→左下流动（与管理端蓝天白云同款结构） */
+.login-bg-sky {
+  position: absolute;
+  inset: -55% -35% -45% -35%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 90% 58% at 90% 5%, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 52%),
+    radial-gradient(ellipse 80% 55% at 8% 95%, rgba(129, 199, 132, 0.55) 0%, rgba(255, 255, 255, 0) 58%),
+    radial-gradient(ellipse 70% 45% at 50% 40%, rgba(200, 230, 201, 0.5) 0%, rgba(255, 255, 255, 0) 65%),
+    linear-gradient(
+      145deg,
+      rgba(165, 214, 167, 0.92) 0%,
+      rgba(255, 255, 255, 0.65) 38%,
+      rgba(200, 230, 201, 0.88) 72%,
+      rgba(139, 195, 74, 0.55) 100%
+    );
+  background-size: 120% 120%;
+  animation: skyFlow 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes skyFlow {
   0% {
-    background-position: 0% 50%;
+    transform: translate(14%, -12%) rotate(0deg) scale(1);
+    background-position: 0% 0%;
   }
   50% {
-    background-position: 100% 50%;
+    transform: translate(-18%, 16%) rotate(1.2deg) scale(1.09);
+    background-position: 100% 100%;
   }
   100% {
-    background-position: 0% 50%;
+    transform: translate(14%, -12%) rotate(0deg) scale(1);
+    background-position: 0% 0%;
   }
 }
 
 .login-card {
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 400px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 12px 40px rgba(76, 175, 80, 0.12), 0 2px 0 rgba(255, 255, 255, 0.8) inset;
+  border: 1px solid rgba(255, 255, 255, 0.9);
   padding: 32px;
   text-align: center;
+  transition: box-shadow 0.35s ease, transform 0.35s ease;
+}
+
+.login-card:hover {
+  box-shadow: 0 16px 48px rgba(76, 175, 80, 0.16), 0 2px 0 rgba(255, 255, 255, 0.85) inset;
+  transform: translateY(-2px);
 }
 
 .login-title {

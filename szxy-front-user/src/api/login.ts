@@ -30,7 +30,7 @@ export const pwLogin = (username: string, password: string) => {
 
 // 5. 个人信息设置
 export const setUserInfo = (data: any) => {
-  return axios.post('/lg/infoset', data);
+  return axios.post('/ur/infoset', data);
 };
 
 // 6. 退出登录

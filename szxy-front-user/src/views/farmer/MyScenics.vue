@@ -1,10 +1,8 @@
 <template>
   <div class="my-scenics-container">
-    <header class="my-header">
-      <button class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">我的景点</h1>
-      <button class="add-btn" @click="addScenic">＋</button>
-    </header>
+    <div class="list-toolbar">
+      <el-button type="primary" @click="addScenic">＋ 新增景点</el-button>
+    </div>
 
     <div v-if="loading" class="loading-container">
       <div class="loading"></div>
@@ -17,7 +15,7 @@
     </div>
 
     <div v-else-if="scenics.length === 0" class="empty-container">
-      <p>暂无景点，点击右上角＋新增</p>
+      <p>暂无景点，点击上方「新增景点」</p>
     </div>
 
     <div v-else class="scenics-list">
@@ -85,6 +83,10 @@ onMounted(fetchScenics);
 .my-scenics-container {
   min-height: 100vh;
   background: transparent;
+}
+
+.list-toolbar {
+  padding: 0 16px 12px;
 }
 
 .my-header {

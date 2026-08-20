@@ -1,10 +1,5 @@
 <template>
   <div class="my-village-container">
-    <header class="my-header">
-      <button class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">我的村</h1>
-    </header>
-
     <div v-if="loading" class="loading-container">
       <div class="loading"></div>
       <p>加载中...</p>

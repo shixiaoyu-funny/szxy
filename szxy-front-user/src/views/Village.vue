@@ -1,10 +1,5 @@
 <template>
   <div class="village-container">
-    <header class="village-header">
-      <button class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">优质农村</h1>
-    </header>
-    
     <div class="village-tabs">
       <button 
         v-for="tab in tabs" 

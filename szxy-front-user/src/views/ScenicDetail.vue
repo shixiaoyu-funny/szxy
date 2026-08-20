@@ -1,10 +1,5 @@
 <template>
   <div class="scenic-detail-container">
-    <header class="scenic-header">
-      <button type="button" class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">景点详情</h1>
-    </header>
-
     <div v-if="loading" class="loading-container">
       <div class="loading"></div>
       <p>加载中...</p>
@@ -331,13 +326,10 @@ const submitComment = async () => {
     }
 
     const commentData = {
-      userId: userStore.userInfo?.id || 1,
-      targetId: scenicId.value,
-      targetType: 1,
+      scenic_id: scenicId.value,
       content: commentContent.value,
       score: selectedRating.value,
-      commentImg: commentImg,
-      isShow: 1
+      comment_img: commentImg
     };
 
     const response = await userComment(commentData);
@@ -348,7 +340,7 @@ const submitComment = async () => {
       username,
       content: commentContent.value,
       score: selectedRating.value,
-      comment_img: commentData.commentImg, // ✅ 统一用下划线
+      comment_img: commentData.comment_img, // ✅ 与后端 SNAKE_CASE 一致
       create_time: new Date().toLocaleString('zh-CN'),
       isShow: 1
     });
@@ -362,9 +354,9 @@ const submitComment = async () => {
     commentPreviewUrls.value = [];
 
     ElMessage.success('评论发布成功！');
-  } catch (error) {
+  } catch (error: any) {
     console.error('评论失败:', error);
-    ElMessage.error('评论失败，请重试');
+    ElMessage.error(error?.message || '评论失败，请重试');
   } finally {
     submitting.value = false;
   }

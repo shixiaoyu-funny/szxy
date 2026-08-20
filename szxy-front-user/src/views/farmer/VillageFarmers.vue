@@ -1,10 +1,8 @@
 <template>
   <div class="village-farmers-container">
-    <header class="my-header">
-      <button class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">本村农户</h1>
-      <button class="add-btn" @click="openAdd">＋</button>
-    </header>
+    <div class="list-toolbar">
+      <el-button type="primary" @click="openAdd">＋ 新增农户</el-button>
+    </div>
 
     <div v-if="loading" class="loading-container">
       <div class="loading"></div>
@@ -17,7 +15,7 @@
     </div>
 
     <div v-else-if="farmers.length === 0" class="empty-container">
-      <p>本村暂无农户，点击右上角＋新增</p>
+      <p>本村暂无农户，点击上方「新增农户」</p>
     </div>
 
     <div v-else class="farmers-list">
@@ -204,6 +202,10 @@ onMounted(() => {
 .village-farmers-container {
   min-height: 100vh;
   background: transparent;
+}
+
+.list-toolbar {
+  padding: 0 16px 12px;
 }
 
 .my-header {

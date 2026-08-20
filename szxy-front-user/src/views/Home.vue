@@ -1,10 +1,5 @@
 <template>
   <div class="home-container">
-    <!-- 顶部导航 -->
-    <header class="home-header">
-      <h1 class="header-title">首页</h1>
-    </header>
-
     <!-- 搜索栏 -->
     <div class="search-bar">
       <input type="text" class="search-input" placeholder="搜索景点、农产品..." v-model="searchQuery" @keyup.enter="search" />

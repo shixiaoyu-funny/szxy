@@ -1,10 +1,5 @@
 <template>
   <div class="add-scenic-container">
-    <header class="my-header">
-      <button class="back-btn" @click="goBack">←</button>
-      <h1 class="header-title">新增景点</h1>
-    </header>
-
     <div class="form-container">
       <div class="form-group">
         <label class="form-label">景点名称</label>
