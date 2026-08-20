@@ -61,23 +61,17 @@ export const reportApi = {
   getUv7: (): Promise<number[]> => service.get('/report/uv7')
 };
 
-/** 登录（`/lg`） */
+/** 登录（`/lg`，管理端仅账密登录） */
 export const loginApi = {
-  sendCode: (content: string): Promise<string> =>
-    service.post('/lg/sdcode', null, { params: { content } }),
-  phoneLogin: (phone: string, code: string): Promise<string> =>
-    service.post('/lg/ph', null, { params: { phone, code } }),
-  emailLogin: (email: string, code: string): Promise<string> =>
-    service.post('/lg/em', null, { params: { email, code } }),
   pwLogin: (username: string, password: string): Promise<string> =>
     service.post('/lg/pw', null, { params: { username, password } }),
-  infoSet: (data: Record<string, unknown>): Promise<unknown> => service.post('/lg/infoset', data),
   logout: (): Promise<unknown> => service.post('/lg/lgout')
 };
 
 /** 用户（`/ur`） */
 export const userApi = {
-  getInfo: (): Promise<Record<string, unknown>> => service.get('/ur/info')
+  getInfo: (): Promise<Record<string, unknown>> => service.get('/ur/info'),
+  infoSet: (data: Record<string, unknown>): Promise<unknown> => service.post('/ur/infoset', data)
 };
 
 /** 景点管理（`/sc`，Service 层 requireAdmin 校验 role=4） */

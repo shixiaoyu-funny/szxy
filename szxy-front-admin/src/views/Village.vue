@@ -4,7 +4,6 @@
     <el-card class="village-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>农村列表（分页查询 / 新增 / 修改 / 删除）</span>
           <div class="header-actions">
             <el-button type="primary" @click="openAdd">
               <el-icon><Plus /></el-icon>

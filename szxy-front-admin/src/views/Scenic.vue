@@ -1,7 +1,6 @@
 <template>
   <div class="scenic-container">
     <h2 class="page-title">景点管理</h2>
-    <p class="sub">管理端直接增删改景点（农户/村长在用户端自建，此处仅管理）</p>
 
     <el-card shadow="hover">
       <template #header>

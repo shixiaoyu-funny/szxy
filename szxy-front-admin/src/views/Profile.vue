@@ -55,7 +55,7 @@
           {{ userTypeText }}
         </el-descriptions-item>
         <el-descriptions-item label="头像地址" :span="2">
-          <span class="mono-ellipsis">{{ pick(detail, 'avator', 'avator') || '未设置' }}</span>
+          <span class="mono-ellipsis">{{ pick(detail, 'avatar', 'avatar') || '未设置' }}</span>
         </el-descriptions-item>
       </el-descriptions>
       <el-empty v-else description="暂无用户信息，请尝试刷新或重新登录" />
@@ -99,9 +99,9 @@
             </div>
           </div>
         </el-form-item>
-        <el-form-item label="图片地址" prop="avator">
+        <el-form-item label="图片地址" prop="avatar">
           <el-input
-            v-model="editForm.avator"
+            v-model="editForm.avatar"
             type="textarea"
             :rows="2"
             placeholder="上传成功后自动填入；也可手动粘贴外链地址"
@@ -125,7 +125,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
 import { Refresh, EditPen, UserFilled, Upload } from '@element-plus/icons-vue';
-import { userApi, loginApi, uploadApi } from '../api';
+import { userApi, uploadApi } from '../api';
 import store from '../store';
 import { pick } from '../utils/adminFields';
 
@@ -167,15 +167,15 @@ function revokeEditPreview() {
 
 const editAvatarDisplay = computed(() => {
   if (editLocalPreview.value) return editLocalPreview.value;
-  const u = editForm.value.avator?.trim();
+  const u = editForm.value.avatar?.trim();
   return u || defaultAvatar;
 });
 
 const defaultAvatar =
   'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20simple&image_size=square';
 
-/** 管理端仅允许管理员（type === 3） */
-const ADMIN_EXPECTED_TYPE = 3;
+/** 管理端仅允许管理员（role === 4） */
+const ADMIN_EXPECTED_ROLE = 4;
 
 const displayName = computed(() => {
   const u = pick(detail.value, 'username', 'username');
@@ -183,7 +183,7 @@ const displayName = computed(() => {
 });
 
 const avatarUrl = computed(() => {
-  const a = pick(detail.value, 'avator', 'avator');
+  const a = pick(detail.value, 'avatar', 'avatar');
   return (a && String(a)) || defaultAvatar;
 });
 
@@ -203,16 +203,18 @@ const statusTag = computed(() => {
 });
 
 const userTypeText = computed(() => {
-  const t = Number(pick(detail.value, 'type', 'type'));
-  switch (t) {
+  const r = Number(pick(detail.value, 'role', 'role'));
+  switch (r) {
     case 1:
-      return '普通用户';
+      return '游客';
     case 2:
       return '农户';
     case 3:
+      return '村长';
+    case 4:
       return '管理员';
     default:
-      return t ? `类型 ${t}` : '未知';
+      return r ? `角色 ${r}` : '未知';
   }
 });
 
@@ -221,7 +223,7 @@ const editForm = ref({
   username: '',
   phone: '',
   email: '',
-  avator: '',
+  avatar: '',
   password: ''
 });
 
@@ -229,9 +231,9 @@ const editRules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }]
 };
 
-function assertAdminType(info: Record<string, unknown>) {
-  const t = Number(pick(info, 'type', 'type'));
-  if (t !== ADMIN_EXPECTED_TYPE) {
+function assertAdminRole(info: Record<string, unknown>) {
+  const r = Number(pick(info, 'role', 'role'));
+  if (r !== ADMIN_EXPECTED_ROLE) {
     ElMessage.error('权限不足，无法访问！');
     store.actions.logout();
     router.replace('/login');
@@ -244,7 +246,7 @@ async function fetchProfile() {
   loading.value = true;
   try {
     const info = (await userApi.getInfo()) as Record<string, unknown>;
-    if (!assertAdminType(info)) return;
+    if (!assertAdminRole(info)) return;
     detail.value = info;
     store.actions.updateUserInfo(info);
   } catch (e) {
@@ -267,7 +269,7 @@ function openEdit() {
     username: String(pick(d, 'username', 'username') ?? ''),
     phone: String(pick(d, 'phone', 'phone') ?? ''),
     email: String(pick(d, 'email', 'email') ?? ''),
-    avator: String(pick(d, 'avator', 'avator') ?? ''),
+    avatar: String(pick(d, 'avatar', 'avatar') ?? ''),
     password: ''
   };
   editVisible.value = true;
@@ -310,7 +312,7 @@ async function onAvatarFileChange(event: Event) {
       ElMessage.error('上传成功但未返回图片地址');
       return;
     }
-    editForm.value.avator = imageUrl;
+    editForm.value.avatar = imageUrl;
     revokeEditPreview();
     ElMessage.success('头像上传成功');
   } catch (e) {
@@ -332,12 +334,12 @@ async function submitEdit() {
       username: editForm.value.username,
       phone: editForm.value.phone || undefined,
       email: editForm.value.email || undefined,
-      avator: editForm.value.avator || undefined
+      avatar: editForm.value.avatar || undefined
     };
     if (editForm.value.password) {
       payload.password = editForm.value.password;
     }
-    await loginApi.infoSet(payload);
+    await userApi.infoSet(payload);
     ElMessage.success('保存成功');
     editVisible.value = false;
     await fetchProfile();

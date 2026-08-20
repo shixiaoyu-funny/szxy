@@ -1,7 +1,6 @@
 <template>
   <div class="farmer-container">
     <h2 class="page-title">农户管理</h2>
-    <p class="sub">管理端直接建档农户 / 任命村长（全程无审核状态机）</p>
 
     <el-card shadow="hover">
       <template #header>
