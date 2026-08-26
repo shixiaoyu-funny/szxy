@@ -5,16 +5,16 @@ import com.shixiaoyu.xiangyueproject.entity.dto.UserCommentDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserSetInfoDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.entity.result.Result;
+import com.shixiaoyu.xiangyueproject.entity.vo.LikeReceivedVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.ScenicVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.UserVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
 import com.shixiaoyu.xiangyueproject.service.LoginService;
 import com.shixiaoyu.xiangyueproject.service.UserService;
-import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
+import com.shixiaoyu.xiangyueproject.utils.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,8 +43,9 @@ public class UserController {
 
     @Operation(summary = "个人信息设置")
     @PostMapping("/infoset")
-    public Result<Void> infoSet(@Parameter(description = "用户信息（username/password/phone/email/avatar，均可选，password 明文服务端加密）", name = "userSetInfoDTO", required = true)
-                                @RequestBody UserSetInfoDTO userSetInfoDTO) {
+    public Result<Void> infoSet(
+            @Parameter(description = "用户信息（username/password/phone/email/avatar，均可选，password 明文服务端加密）", required = true)
+            @RequestBody UserSetInfoDTO userSetInfoDTO) {
         loginService.infoSet(userSetInfoDTO);
         return Result.ok();
     }
@@ -52,49 +53,54 @@ public class UserController {
     @GetMapping("/info")
     @Operation(summary = "获取用户信息")
     public Result<UserVO> info() {
-        User user = userService.getById(SecurityUtils.currentUserId());
+        User user = userService.getById(SecurityUtil.currentUserId());
         return Result.ok(BeanUtil.copyProperties(user, UserVO.class));
     }
 
     @PostMapping("/comment")
     @Operation(summary = "用户评论")
-    public Result<Void> comment(@Parameter(description = "评论信息（scenic_id必填，score 1-5）", name = "userCommentDTO", required = true)
-                                @Valid @RequestBody UserCommentDTO userCommentDTO) {
+    public Result<Void> comment(
+            @Parameter(description = "评论信息（scenicId必填，score 1-5）", required = true)
+            @Valid @RequestBody UserCommentDTO userCommentDTO) {
         userService.comment(userCommentDTO);
         return Result.ok();
     }
 
     @PostMapping("/like/{id}")
     @Operation(summary = "用户点赞/取消点赞")
-    public Result<String> like(@Parameter(description = "景点id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id) {
+    public Result<String> like(@Parameter(description = "景点id", required = true) @PathVariable Long id) {
         return Result.ok(userService.like(id));
     }
 
     @PostMapping("/collect/{id}")
     @Operation(summary = "用户收藏/取消收藏")
-    public Result<String> collect(@Parameter(description = "景点id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id) {
+    public Result<String> collect(@Parameter(description = "景点id", required = true) @PathVariable Long id) {
         return Result.ok(userService.collect(id));
     }
 
     @PostMapping("/isLike")
     @Operation(summary = "用户是否点赞")
-    public Result<Boolean> isLike(@Parameter(description = "景点id", name = "id", required = true) @RequestParam Long id) {
+    public Result<Boolean> isLike(@Parameter(description = "景点id", required = true) @RequestParam Long id) {
         return Result.ok(userService.isLike(id));
     }
 
     @PostMapping("/isCollect")
     @Operation(summary = "用户是否收藏")
-    public Result<Boolean> isCollect(@Parameter(description = "景点id", name = "id", required = true) @RequestParam Long id) {
+    public Result<Boolean> isCollect(@Parameter(description = "景点id", required = true) @RequestParam Long id) {
         return Result.ok(userService.isCollect(id));
     }
 
     @GetMapping("/search")
-    @Operation(summary = "搜索农村（多字段模糊+分页）")
-    public Result<PageResultVO<VillageBaseVO>> search(
-            @Parameter(description = "搜索内容", name = "content") @RequestParam(required = false) String content,
-            @Parameter(description = "页码", name = "page_no") @RequestParam(required = false) Integer pageNo,
-            @Parameter(description = "每页条数", name = "page_size") @RequestParam(required = false) Integer pageSize) {
-        return Result.ok(userService.search(content, pageNo, pageSize));
+    @Operation(summary = "搜索（多字段模糊+分页）")
+    public Result<?> search(
+            @Parameter(description = "搜索内容") @RequestParam(required = false) String content,
+            @Parameter(description = "搜索类型（农村-1，景点-2）") @RequestParam(required = false) Integer type,
+            @Parameter(description = "页码") @RequestParam(required = false) Integer pageNo,
+            @Parameter(description = "每页条数") @RequestParam(required = false) Integer pageSize) {
+        if (type != null && type == 2) {
+            return Result.ok(userService.scenicSearch(content, pageNo, pageSize));
+        }
+        return Result.ok(userService.villageSearch(content, pageNo, pageSize));
     }
 
     @GetMapping("/like")
@@ -113,5 +119,11 @@ public class UserController {
     @Operation(summary = "用户历史收藏景点")
     public Result<List<ScenicVO>> getCollections() {
         return Result.ok(userService.getCollections());
+    }
+
+    @GetMapping("/msg/likes-received")
+    @Operation(summary = "收到的点赞动态（消息页）")
+    public Result<List<LikeReceivedVO>> likesReceived() {
+        return Result.ok(userService.likesReceived());
     }
 }

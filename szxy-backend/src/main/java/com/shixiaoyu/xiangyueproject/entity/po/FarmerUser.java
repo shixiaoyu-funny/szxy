@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 @TableName("farm_user")
 @Schema(title = "农户用户实体", description = "存储农户的基础经营信息")
 public class FarmerUser {
+    @TableId(type = IdType.AUTO)
     @Schema(description = "农户档案ID（自增主键）")
     private Long id;
 

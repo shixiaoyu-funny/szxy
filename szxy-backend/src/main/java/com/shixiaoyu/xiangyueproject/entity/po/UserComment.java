@@ -32,6 +32,9 @@ public class UserComment {
     @Schema(description = "景点ID")
     private Long scenicId;
 
+    @Schema(description = "父评论ID，NULL为一级评论")
+    private Long parentId;
+
     @Schema(description = "评论内容")
     private String content;
 

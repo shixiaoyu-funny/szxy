@@ -7,7 +7,7 @@ import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
-import com.shixiaoyu.xiangyueproject.util.UserHolder;
+import com.shixiaoyu.xiangyueproject.utils.UserHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

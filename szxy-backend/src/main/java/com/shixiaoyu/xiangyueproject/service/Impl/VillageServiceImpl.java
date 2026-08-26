@@ -2,17 +2,14 @@ package com.shixiaoyu.xiangyueproject.service.Impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.OrderItem;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shixiaoyu.xiangyueproject.constants.ErrorConstants;
-import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.PageResultDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.VillageBaseDTO;
-import com.shixiaoyu.xiangyueproject.entity.po.FarmerUser;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageBase;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageScenic;
@@ -24,7 +21,7 @@ import com.shixiaoyu.xiangyueproject.mapper.ScenicMapper;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.VillageService;
-import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
+import com.shixiaoyu.xiangyueproject.utils.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -72,7 +69,7 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
 
     @Override
     public void addVillage(VillageBaseDTO dto) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         if (dto == null) {
             throw new BusinessException(ErrorConstants.INSERT_NULL);
         }
@@ -84,7 +81,7 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
 
     @Override
     public void updateVillage(Long id, VillageBaseDTO dto) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         if (id == null) {
             throw new BusinessException(ErrorConstants.NULL_ID);
         }
@@ -100,7 +97,7 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
 
     @Override
     public void deleteVillage(Long id) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         if (id == null) {
             throw new BusinessException(ErrorConstants.NULL_ID);
         }
@@ -175,7 +172,7 @@ public class VillageServiceImpl extends ServiceImpl<VillageMapper, VillageBase> 
         if (manageIds.isEmpty()) {
             return;
         }
-        Map<Long, User> userMap = userMapper.selectBatchIds(manageIds).stream()
+        Map<Long, User> userMap = userMapper.selectByIds(manageIds).stream()
                 .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
         for (int i = 0; i < voList.size(); i++) {
             Long manageId = poList.get(i).getManageId();

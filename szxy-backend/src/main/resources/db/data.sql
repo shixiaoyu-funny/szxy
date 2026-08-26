@@ -8,6 +8,7 @@
 --   zhangjianguo (role=3 村长)    123456
 --   lidali      (role=2 农户)    123456
 --   wangcuihua  (role=2 农户)    123456
+--   test01~test10 (role=1 游客)  test123123
 -- 演示登录后可自行 info_set 改密码/昵称/头像
 -- =====================================================================
 
@@ -18,12 +19,26 @@ USE xiangyue;
 -- BCrypt 哈希（$2b$12$，Spring Security BCryptPasswordEncoder 兼容）
 --   admin123 -> $2b$12$gAxDaWhOEs0hw17SKiyRo.STUvi2O.xG2NeP1IAt4UdPMqE7T3i4S
 --   123456   -> $2b$12$zQBiWz7IftD5ZkXe4lxqcOyTkq6I.k9s65WRqvnJNPe9ITcFM6m0i
+--   test123123 -> $2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe
 -- ---------------------------------------------------------------------
 INSERT INTO `user` (`id`, `username`, `password`, `phone`, `email`, `avatar`, `role`, `status`) VALUES
     (1, 'admin',        '$2b$12$gAxDaWhOEs0hw17SKiyRo.STUvi2O.xG2NeP1IAt4UdPMqE7T3i4S', '13800000001', 'admin@xiangyue.com', NULL, 4, 1),
     (2, 'zhangjianguo', '$2b$12$zQBiWz7IftD5ZkXe4lxqcOyTkq6I.k9s65WRqvnJNPe9ITcFM6m0i', '13800000002', 'zj@xiangyue.com',     NULL, 3, 1),
     (3, 'lidali',       '$2b$12$zQBiWz7IftD5ZkXe4lxqcOyTkq6I.k9s65WRqvnJNPe9ITcFM6m0i', '13800000003', 'ldl@xiangyue.com',     NULL, 2, 1),
     (4, 'wangcuihua',   '$2b$12$zQBiWz7IftD5ZkXe4lxqcOyTkq6I.k9s65WRqvnJNPe9ITcFM6m0i', '13800000004', 'wch@xiangyue.com',     NULL, 2, 1);
+
+-- 游客测试账号 test01~test10（密码均为 test123123）
+INSERT INTO `user` (`id`, `username`, `password`, `phone`, `email`, `avatar`, `role`, `status`) VALUES
+    (11, 'test01', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000001', 'test01@test.xiangyue.com', NULL, 1, 1),
+    (12, 'test02', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000002', 'test02@test.xiangyue.com', NULL, 1, 1),
+    (13, 'test03', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000003', 'test03@test.xiangyue.com', NULL, 1, 1),
+    (14, 'test04', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000004', 'test04@test.xiangyue.com', NULL, 1, 1),
+    (15, 'test05', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000005', 'test05@test.xiangyue.com', NULL, 1, 1),
+    (16, 'test06', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000006', 'test06@test.xiangyue.com', NULL, 1, 1),
+    (17, 'test07', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000007', 'test07@test.xiangyue.com', NULL, 1, 1),
+    (18, 'test08', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000008', 'test08@test.xiangyue.com', NULL, 1, 1),
+    (19, 'test09', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000009', 'test09@test.xiangyue.com', NULL, 1, 1),
+    (20, 'test10', '$2b$10$zQCGuVx5mZT1gISlxYC5zuUPU6c7xxmOpyJh0c3iz5oohnd7NhYoe', '13900000010', 'test10@test.xiangyue.com', NULL, 1, 1);
 
 -- ---------------------------------------------------------------------
 -- 农村
@@ -48,3 +63,15 @@ INSERT INTO `village_scenic` (`id`, `user_id`, `village_id`, `name`, `intro`, `i
     (1, 3, 1, '杏花山观景台', '登顶可俯瞰整座古村落与漫山杏花，日出时分尤为壮观。', NULL, 30, 1, 0, NULL, 128, 56),
     (2, 3, 1, '李家徽派民宿', '由百年徽商老宅改造，天井、雕花窗与徽菜一应俱全。', NULL, 0, 4, 1, '双人间380元/晚，含早餐', 96, 43),
     (3, 4, 2, '桃花溪畔露营', '溪水清澈，两岸桃林环绕，提供帐篷租赁与篝火晚会。', NULL, 50, 3, 1, '帐篷120元/顶，含地垫睡袋', 210, 98);
+
+-- ---------------------------------------------------------------------
+-- 系统配置（真实密钥请本地替换，勿提交仓库）
+-- ---------------------------------------------------------------------
+INSERT INTO `system_config` (`config_key`, `config_value`) VALUES
+    ('BOCHA_API_KEY', 'your_bocha_api_key'),
+    ('BOCHA_API_BASE_URL', 'https://api.bochaai.com/v1/web-search'),
+    ('DASHSCOPE_API_KEY', 'your_dashscope_api_key'),
+    ('DASHSCOPE_EMBEDDING_MODEL', 'text-embedding-v3'),
+    ('MILVUS_URI', 'http://localhost:19530'),
+    ('MILVUS_COLLECTION', 'szxy')
+ON DUPLICATE KEY UPDATE `config_value` = VALUES(`config_value`);

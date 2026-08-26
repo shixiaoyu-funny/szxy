@@ -8,7 +8,6 @@ import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
 import com.shixiaoyu.xiangyueproject.service.VillageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +39,8 @@ public class VillageController {
 
     @PostMapping("/new")
     @Operation(summary = "新增农村")
-    public Result<Void> addVillage(@Parameter(description = "农村信息", name = "villageBaseDTO", required = true)
-                                   @RequestBody VillageBaseDTO villageBaseDTO) {
+    public Result<Void> addVillage(
+            @Parameter(description = "农村信息", required = true) @RequestBody VillageBaseDTO villageBaseDTO) {
         villageService.addVillage(villageBaseDTO);
         return Result.ok();
     }
@@ -49,8 +48,8 @@ public class VillageController {
     @PostMapping("/modify/{id}")
     @Operation(summary = "修改农村信息")
     public Result<Void> updateVillage(
-            @Parameter(description = "农村id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id,
-            @Parameter(description = "农村信息", name = "villageBaseDTO", required = true) @RequestBody VillageBaseDTO villageBaseDTO) {
+            @Parameter(description = "农村id", required = true) @PathVariable Long id,
+            @Parameter(description = "农村信息", required = true) @RequestBody VillageBaseDTO villageBaseDTO) {
         villageService.updateVillage(id, villageBaseDTO);
         return Result.ok();
     }
@@ -58,7 +57,7 @@ public class VillageController {
     @PostMapping("/del/{id}")
     @Operation(summary = "删除农村")
     public Result<Void> deleteVillage(
-            @Parameter(description = "农村id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id) {
+            @Parameter(description = "农村id", required = true) @PathVariable Long id) {
         villageService.deleteVillage(id);
         return Result.ok();
     }

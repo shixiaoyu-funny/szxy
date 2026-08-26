@@ -8,7 +8,6 @@ import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
 import com.shixiaoyu.xiangyueproject.service.FarmerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +42,8 @@ public class FarmerController {
     @PostMapping("/new")
     @Operation(summary = "新增本村农户（村长）", description = "便于村长直接增加农户")
     public Result<Void> addFarmer(
-            @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,
-            @Parameter(description = "农户信息（user基础信息 + farmer档案信息）", name = "farmerUserDTO", required = true) @RequestBody FarmerUserDTO farmerUserDTO) {
+            @Parameter(description = "农村id", required = true) @RequestParam Long villageId,
+            @Parameter(description = "农户信息（user基础信息 + farmer档案信息）", required = true) @RequestBody FarmerUserDTO farmerUserDTO) {
         farmerService.addFarmer(villageId, farmerUserDTO);
         return Result.ok();
     }
@@ -52,8 +51,8 @@ public class FarmerController {
     @PostMapping("/modify/{id}")
     @Operation(summary = "修改本村农户（村长）")
     public Result<Void> updateFarmer(
-            @Parameter(description = "农户 user.id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id,
-            @Parameter(description = "农户信息（user基础信息 + farmer档案信息）", name = "farmerUserDTO", required = true) @RequestBody FarmerUserDTO farmerUserDTO) {
+            @Parameter(description = "农户 user.id", required = true) @PathVariable Long id,
+            @Parameter(description = "农户信息（user基础信息 + farmer档案信息）", required = true) @RequestBody FarmerUserDTO farmerUserDTO) {
         farmerService.updateFarmer(id, farmerUserDTO);
         return Result.ok();
     }
@@ -61,7 +60,7 @@ public class FarmerController {
     @PostMapping("/remote/{id}")
     @Operation(summary = "删除本村农户（档案删除，账号降为游客；村长）")
     public Result<Void> deleteFarmer(
-            @Parameter(description = "农户 user.id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id) {
+            @Parameter(description = "农户 user.id", required = true) @PathVariable Long id) {
         farmerService.deleteFarmer(id);
         return Result.ok();
     }
@@ -89,8 +88,8 @@ public class FarmerController {
     @PostMapping("/create")
     @Operation(summary = "管理端：建档农户（创建账号+档案，默认密码 123456）")
     public Result<Void> createFarmer(
-            @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,
-            @Parameter(description = "农户信息（user基础信息 + farmer档案信息）", name = "farmerUserDTO", required = true) @RequestBody FarmerUserDTO farmerUserDTO) {
+            @Parameter(description = "农村id", required = true) @RequestParam Long villageId,
+            @Parameter(description = "农户信息（user基础信息 + farmer档案信息）", required = true) @RequestBody FarmerUserDTO farmerUserDTO) {
         farmerService.createFarmer(villageId, farmerUserDTO);
         return Result.ok();
     }
@@ -98,8 +97,8 @@ public class FarmerController {
     @PostMapping("/set-manager")
     @Operation(summary = "管理端：任命/更换村长（事务内同步 manage_id 与角色）")
     public Result<Void> setManager(
-            @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,
-            @Parameter(description = "农户 user.id", name = "farmer_user_id", required = true, in = ParameterIn.QUERY) @RequestParam Long farmerUserId) {
+            @Parameter(description = "农村id", required = true) @RequestParam Long villageId,
+            @Parameter(description = "农户 user.id", required = true) @RequestParam Long farmerUserId) {
         farmerService.setVillageManager(villageId, farmerUserId);
         return Result.ok();
     }

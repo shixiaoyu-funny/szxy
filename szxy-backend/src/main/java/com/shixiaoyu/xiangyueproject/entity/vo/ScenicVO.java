@@ -20,11 +20,17 @@ public class ScenicVO {
     @Schema(description = "所属农村ID")
     private Long villageId;
 
+    @Schema(description = "创建人 user.id")
+    private Long userId;
+
     @Schema(description = "景区名称")
     private String name;
 
     @Schema(description = "所属村落名称")
     private String villageName;
+
+    @Schema(description = "创建人用户名")
+    private String creatorName;
 
     @Schema(description = "景区详细介绍")
     private String intro;

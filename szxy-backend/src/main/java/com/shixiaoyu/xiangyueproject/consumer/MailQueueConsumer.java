@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RabbitListener(bindings = @QueueBinding(value = @Queue(name = CommonConstants.EMAIL_QUEUE_NAME),
-        exchange = @Exchange(name = CommonConstants.VERIFY_EXCHANGE_NAME),
+        exchange = @Exchange(name = CommonConstants.EXCHANGE_NAME),
         key = CommonConstants.EMAIL_ROUTING_KEY))
 public class MailQueueConsumer {
 

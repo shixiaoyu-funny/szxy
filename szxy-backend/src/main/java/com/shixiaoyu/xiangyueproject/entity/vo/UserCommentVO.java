@@ -7,17 +7,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 评论 VO（含评论人用户名）
+ * 评论 VO（含评论人信息与楼中楼 replies）
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(title = "评论VO")
 public class UserCommentVO {
+    @Schema(description = "评论ID")
+    private Long id;
+
+    @Schema(description = "父评论ID，NULL为一级评论")
+    private Long parentId;
+
     @Schema(description = "评论人用户名")
     private String username;
+
+    @Schema(description = "评论人头像")
+    private String avatar;
 
     @Schema(description = "评论内容")
     private String content;
@@ -33,4 +44,7 @@ public class UserCommentVO {
 
     @Schema(description = "评论时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "楼中楼回复")
+    private List<UserCommentVO> replies = new ArrayList<>();
 }

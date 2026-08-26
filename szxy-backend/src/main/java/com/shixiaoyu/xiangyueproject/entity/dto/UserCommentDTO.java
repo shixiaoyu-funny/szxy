@@ -21,6 +21,9 @@ public class UserCommentDTO {
     @Schema(description = "景点ID")
     private Long scenicId;
 
+    @Schema(description = "父评论ID，为空表示一级评论")
+    private Long parentId;
+
     @Schema(description = "评论内容")
     private String content;
 
@@ -29,7 +32,7 @@ public class UserCommentDTO {
     @Schema(description = "评分（1-5星）")
     private Integer score;
 
-    @Schema(description = "评论图片URL")
+    @Schema(description = "评论图片URL（仅一级评论可用）")
     private String commentImg;
 
     @Schema(description = "是否展示：0隐藏 1展示")

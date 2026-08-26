@@ -3,8 +3,8 @@ package com.shixiaoyu.xiangyueproject.interceptor;
 import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserDTO;
 import com.shixiaoyu.xiangyueproject.enums.RoleEnum;
-import com.shixiaoyu.xiangyueproject.util.PVUVUtils;
-import com.shixiaoyu.xiangyueproject.util.UserHolder;
+import com.shixiaoyu.xiangyueproject.utils.PVUVUtil;
+import com.shixiaoyu.xiangyueproject.utils.UserHolder;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,7 +25,7 @@ public class FreshInterceptor implements HandlerInterceptor {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
-    private PVUVUtils pvuvUtils;
+    private PVUVUtil pvuvUtil;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -36,8 +36,8 @@ public class FreshInterceptor implements HandlerInterceptor {
         }
         UserDTO user = UserHolder.getUser();
         if (user != null && user.getRole() != RoleEnum.ADMIN) {
-            pvuvUtils.addUV(LocalDate.now(), token);
-            pvuvUtils.incrPV(LocalDate.now());
+            pvuvUtil.addUV(LocalDate.now(), token);
+            pvuvUtil.incrPV(LocalDate.now());
         }
         return true;
     }

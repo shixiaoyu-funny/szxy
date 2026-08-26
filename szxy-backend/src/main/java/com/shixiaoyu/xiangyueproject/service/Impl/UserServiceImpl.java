@@ -13,13 +13,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserCommentDTO;
-import com.shixiaoyu.xiangyueproject.entity.po.FarmerUser;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.entity.po.UserCollect;
 import com.shixiaoyu.xiangyueproject.entity.po.UserComment;
 import com.shixiaoyu.xiangyueproject.entity.po.UserLike;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageBase;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageScenic;
+import com.shixiaoyu.xiangyueproject.entity.vo.LikeReceivedVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.ScenicVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
@@ -33,7 +33,7 @@ import com.shixiaoyu.xiangyueproject.mapper.UserLikeMapper;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.UserService;
-import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
+import com.shixiaoyu.xiangyueproject.utils.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -41,11 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -72,17 +68,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public void comment(UserCommentDTO dto) {
-        Long userId = SecurityUtils.currentUserId();
+        Long userId = SecurityUtil.currentUserId();
+        if (scenicMapper.selectById(dto.getScenicId()) == null) {
+            throw new BusinessException("景点不存在");
+        }
+        if (dto.getParentId() != null) {
+            UserComment parent = userCommentMapper.selectById(dto.getParentId());
+            if (parent == null || !dto.getScenicId().equals(parent.getScenicId())) {
+                throw new BusinessException("父评论不存在或不属于该景点");
+            }
+            // 楼中楼不允许带图
+            dto.setCommentImg(null);
+        }
         UserComment comment = BeanUtil.copyProperties(dto, UserComment.class);
         comment.setUserId(userId);
+        if (dto.getParentId() != null) {
+            comment.setCommentImg(null);
+        }
         if (comment.getIsShow() == null) {
             comment.setIsShow(CommentShowEnum.SHOW);
         }
         userCommentMapper.insert(comment);
         stringRedisTemplate.delete(RedisConstants.USER_COMMENTS + userId);
-        if (dto.getScenicId() != null) {
-            stringRedisTemplate.delete(RedisConstants.SCENIC_COMMENTS + dto.getScenicId());
-        }
+        stringRedisTemplate.delete(RedisConstants.SCENIC_COMMENTS + dto.getScenicId());
     }
 
     @Override
@@ -91,7 +99,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (scenicMapper.selectById(scenicId) == null) {
             throw new BusinessException("景点不存在");
         }
-        Long userId = SecurityUtils.currentUserId();
+        Long userId = SecurityUtil.currentUserId();
         Long count = userLikeMapper.selectCount(
                 new LambdaQueryWrapper<UserLike>().eq(UserLike::getUserId, userId).eq(UserLike::getScenicId, scenicId));
         boolean liked = count != null && count > 0;
@@ -117,7 +125,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (scenicMapper.selectById(scenicId) == null) {
             throw new BusinessException("景点不存在");
         }
-        Long userId = SecurityUtils.currentUserId();
+        Long userId = SecurityUtil.currentUserId();
         Long count = userCollectMapper.selectCount(
                 new LambdaQueryWrapper<UserCollect>().eq(UserCollect::getUserId, userId).eq(UserCollect::getScenicId, scenicId));
         boolean collected = count != null && count > 0;
@@ -140,37 +148,37 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public boolean isLike(Long scenicId) {
         Long count = userLikeMapper.selectCount(new LambdaQueryWrapper<UserLike>()
-                .eq(UserLike::getUserId, SecurityUtils.currentUserId()).eq(UserLike::getScenicId, scenicId));
+                .eq(UserLike::getUserId, SecurityUtil.currentUserId()).eq(UserLike::getScenicId, scenicId));
         return count != null && count > 0;
     }
 
     @Override
     public boolean isCollect(Long scenicId) {
         Long count = userCollectMapper.selectCount(new LambdaQueryWrapper<UserCollect>()
-                .eq(UserCollect::getUserId, SecurityUtils.currentUserId()).eq(UserCollect::getScenicId, scenicId));
+                .eq(UserCollect::getUserId, SecurityUtil.currentUserId()).eq(UserCollect::getScenicId, scenicId));
         return count != null && count > 0;
     }
 
     @Override
     public List<ScenicVO> getLikes() {
-        return listRelatedScenics(userLikeMapper, SecurityUtils.currentUserId(),
+        return listRelatedScenics(userLikeMapper, SecurityUtil.currentUserId(),
                 UserLike::getUserId, UserLike::getScenicId, UserLike::getCreateTime, RedisConstants.USER_LIKES);
     }
 
     @Override
     public List<ScenicVO> getComments() {
-        return listRelatedScenics(userCommentMapper, SecurityUtils.currentUserId(),
+        return listRelatedScenics(userCommentMapper, SecurityUtil.currentUserId(),
                 UserComment::getUserId, UserComment::getScenicId, UserComment::getCreateTime, RedisConstants.USER_COMMENTS);
     }
 
     @Override
     public List<ScenicVO> getCollections() {
-        return listRelatedScenics(userCollectMapper, SecurityUtils.currentUserId(),
+        return listRelatedScenics(userCollectMapper, SecurityUtil.currentUserId(),
                 UserCollect::getUserId, UserCollect::getScenicId, UserCollect::getCreateTime, RedisConstants.USER_COLLECTIONS);
     }
 
     @Override
-    public PageResultVO<VillageBaseVO> search(String content, Integer pageNo, Integer pageSize) {
+    public PageResultVO<VillageBaseVO> villageSearch(String content, Integer pageNo, Integer pageSize) {
         int pn = pageNo == null || pageNo < 1 ? 1 : pageNo;
         int ps = pageSize == null || pageSize < 1 ? 10 : pageSize;
         LambdaQueryWrapper<VillageBase> wrapper = new LambdaQueryWrapper<>();
@@ -192,16 +200,92 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return new PageResultVO<>(page.getTotal(), voList);
     }
 
+    @Override
+    public PageResultVO<ScenicVO> scenicSearch(String content, Integer pageNo, Integer pageSize) {
+        int pn = pageNo == null || pageNo < 1 ? 1 : pageNo;
+        int ps = pageSize == null || pageSize < 1 ? 10 : pageSize;
+        LambdaQueryWrapper<VillageScenic> wrapper = new LambdaQueryWrapper<>();
+        if (StrUtil.isNotBlank(content)) {
+            String kw = StrUtil.trim(content);
+            List<Long> villageIds = villageMapper.selectList(new LambdaQueryWrapper<VillageBase>()
+                            .like(VillageBase::getName, kw))
+                    .stream()
+                    .map(VillageBase::getId)
+                    .toList();
+            wrapper.and(w -> {
+                w.like(VillageScenic::getName, kw)
+                        .or().like(VillageScenic::getIntro, kw)
+                        .or().like(VillageScenic::getAccommodationInfo, kw);
+                if (!villageIds.isEmpty()) {
+                    w.or().in(VillageScenic::getVillageId, villageIds);
+                }
+            });
+        }
+        wrapper.orderByDesc(VillageScenic::getCreateTime);
+        Page<VillageScenic> page = scenicMapper.selectPage(Page.of(pn, ps), wrapper);
+        List<ScenicVO> voList = page.getRecords().stream()
+                .map(po -> BeanUtil.copyProperties(po, ScenicVO.class))
+                .collect(Collectors.toList());
+        fillScenicVillageNames(voList);
+        return new PageResultVO<>(page.getTotal(), voList);
+    }
+
+    /**
+     * 收到的点赞：他人点赞我创建的景点
+     */
+    @Override
+    public List<LikeReceivedVO> likesReceived() {
+        Long me = SecurityUtil.currentUserId();
+        List<VillageScenic> myScenics = scenicMapper.selectList(new LambdaQueryWrapper<VillageScenic>()
+                .eq(VillageScenic::getUserId, me));
+        if (myScenics.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, VillageScenic> scenicMap = myScenics.stream()
+                .collect(Collectors.toMap(VillageScenic::getId, s -> s, (a, b) -> a));
+        List<UserLike> likes = userLikeMapper.selectList(new LambdaQueryWrapper<UserLike>()
+                .in(UserLike::getScenicId, scenicMap.keySet())
+                .ne(UserLike::getUserId, me)
+                .orderByDesc(UserLike::getCreateTime)
+                .last("limit 100"));
+        if (likes.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> likerIds = likes.stream().map(UserLike::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, User> userMap = likerIds.isEmpty() ? Map.of()
+                : userMapper.selectByIds(likerIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+        List<LikeReceivedVO> result = new ArrayList<>();
+        for (UserLike like : likes) {
+            User u = userMap.get(like.getUserId());
+            VillageScenic scenic = scenicMap.get(like.getScenicId());
+            LikeReceivedVO vo = new LikeReceivedVO();
+            vo.setUsername(u != null ? u.getUsername() : "用户");
+            vo.setAvatar(u != null ? u.getAvatar() : null);
+            vo.setScenicId(like.getScenicId());
+            vo.setScenicName(scenic != null ? scenic.getName() : "景点");
+            vo.setActionText("赞了你的景点「" + vo.getScenicName() + "」");
+            vo.setCreateTime(like.getCreateTime());
+            result.add(vo);
+        }
+        return result;
+    }
+
     // ===================== 私有工具 =====================
 
-    /** 点赞/收藏数原子增减，避免并发丢失 */
+    /**
+     * 点赞/收藏数原子增减，避免并发丢失
+     */
     private void updateScenicCount(Long scenicId, String column, int step) {
         scenicMapper.update(null, new LambdaUpdateWrapper<VillageScenic>()
                 .eq(VillageScenic::getId, scenicId)
                 .setSql(column + " = " + column + " + " + step));
     }
 
-    /** 查询用户关联的景点列表（带缓存，随机TTL防雪崩） */
+    /**
+     * 查询用户关联的景点列表（带缓存，随机TTL防雪崩）
+     */
     private <T> List<ScenicVO> listRelatedScenics(BaseMapper<T> mapper, Long userId,
                                                   SFunction<T, Long> userIdGetter,
                                                   SFunction<T, Long> scenicIdGetter,
@@ -220,7 +304,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         LambdaQueryWrapper<T> qw = new LambdaQueryWrapper<T>()
                 .eq(userIdGetter, userId).orderByDesc(timeGetter);
         List<T> rows = mapper.selectList(qw);
-        List<Long> scenicIds = rows.stream().map(scenicIdGetter).filter(Objects::nonNull).toList();
+        List<Long> scenicIds = rows.stream().map(scenicIdGetter).filter(Objects::nonNull).distinct().toList();
         List<ScenicVO> result = new ArrayList<>();
         if (!scenicIds.isEmpty()) {
             Map<Long, VillageScenic> scenicMap = scenicMapper.selectList(
@@ -242,7 +326,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return result;
     }
 
-    /** 景点转 VO 并批量填充村落名称，避免 N+1 */
+    /**
+     * 景点转 VO 并批量填充村落名称，避免 N+1
+     */
     private void fillScenicVillageNames(List<ScenicVO> voList) {
         if (voList.isEmpty()) {
             return;
@@ -252,7 +338,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (villageIds.isEmpty()) {
             return;
         }
-        Map<Long, String> nameMap = villageMapper.selectBatchIds(villageIds).stream()
+        Map<Long, String> nameMap = villageMapper.selectByIds(villageIds).stream()
                 .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
         voList.forEach(v -> v.setVillageName(nameMap.get(v.getVillageId())));
     }
@@ -263,14 +349,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return vo;
     }
 
-    /** 批量填充村长展示名 */
+    /**
+     * 批量填充村长展示名
+     */
     private void fillManagerNames(List<VillageBaseVO> voList, List<VillageBase> poList) {
         Set<Long> manageIds = poList.stream().map(VillageBase::getManageId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
         if (manageIds.isEmpty()) {
             return;
         }
-        Map<Long, User> userMap = userMapper.selectBatchIds(manageIds).stream()
+        Map<Long, User> userMap = userMapper.selectByIds(manageIds).stream()
                 .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
         for (int i = 0; i < voList.size(); i++) {
             Long manageId = poList.get(i).getManageId();

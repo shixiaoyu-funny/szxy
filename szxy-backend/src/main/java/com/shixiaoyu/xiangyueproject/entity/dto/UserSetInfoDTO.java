@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 用户信息设置（登录后修改资料）
- * 全局 Jackson 为 SNAKE_CASE，请求体字段用 snake_case：username/password/phone/email/avatar
+ * 请求体字段使用小驼峰：username/password/phone/email/avatar
  */
 @Data
 @AllArgsConstructor

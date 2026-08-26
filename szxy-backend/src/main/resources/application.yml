@@ -2,6 +2,23 @@ server:
   port: 8099
 
 spring:
+  profiles:
+    active: local
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 50MB
+  ai:
+    openai:
+      api-key: ${ai.apikey}
+      # 勿在 base-url 末尾加 /v1，Spring AI 默认 completions-path=/v1/chat/completions
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      chat:
+        options:
+          model: qwen3.7-flash
+      embedding:
+        options:
+          model: qwen3.7-text-embedding
   datasource:
     url: ${mysql.url}
     username: ${mysql.username}
@@ -12,15 +29,6 @@ spring:
       host: ${redis.url}
       port: ${redis.port}
       password: ${redis.password}
-
-  profiles:
-    active: local
-  servlet:
-    multipart:
-      max-file-size: 5MB
-      max-request-size: 50MB
-  jackson:
-    property-naming-strategy: SNAKE_CASE
   mail:
     host: ${mail.host}
     username: ${mail.username}
@@ -95,6 +103,7 @@ auth:
   # 需要管理端权限（role=4）的路径，由 AdminInterceptor 统一拦截
   admin-path:
     - /report/**
+    - /sys/**
 
 aliyun:
   accessKeyId: ${aliyun.key-id}
@@ -102,3 +111,12 @@ aliyun:
   regionId: ${aliyun.regionId}
   endpoint: ${aliyun.endpoint}
   bucketName: ${aliyun.bucketName}
+
+ai-websearch:
+  apikey: ${web-search.apikey}
+  base-url: https://api.bochaai.com/v1/web-search
+  count: 10
+  summary: true
+  freshness: noLimit
+  connect-timeout: 10s
+  read-timeout: 15s

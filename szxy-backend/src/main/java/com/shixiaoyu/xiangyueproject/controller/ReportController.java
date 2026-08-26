@@ -2,7 +2,7 @@ package com.shixiaoyu.xiangyueproject.controller;
 
 import com.shixiaoyu.xiangyueproject.entity.result.Result;
 import com.shixiaoyu.xiangyueproject.service.ReportService;
-import com.shixiaoyu.xiangyueproject.util.PVUVUtils;
+import com.shixiaoyu.xiangyueproject.utils.PVUVUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReportController {
     private final ReportService reportService;
-    private final PVUVUtils pvuvUtils;
+    private final PVUVUtil pvuvUtil;
 
     @GetMapping("/farm")
     @Operation(summary = "农户数量")
@@ -36,20 +36,20 @@ public class ReportController {
     @GetMapping("/uv")
     @Operation(summary = "当天UV")
     public Result<Long> uv() {
-        return Result.ok(pvuvUtils.getUV(LocalDate.now()));
+        return Result.ok(pvuvUtil.getUV(LocalDate.now()));
     }
 
     @GetMapping("/pv")
     @Operation(summary = "当天PV")
     public Result<Long> pv() {
-        return Result.ok(pvuvUtils.getPV(LocalDate.now()));
+        return Result.ok(pvuvUtil.getPV(LocalDate.now()));
     }
 
     @GetMapping("/uvpv")
     @Operation(summary = "网站粘性（PV/UV）")
     public Result<Double> uvpv() {
-        long pv = pvuvUtils.getPV(LocalDate.now());
-        long uv = pvuvUtils.getUV(LocalDate.now());
+        long pv = pvuvUtil.getPV(LocalDate.now());
+        long uv = pvuvUtil.getUV(LocalDate.now());
         if (uv == 0) {
             return Result.ok(0.0);
         }
@@ -73,7 +73,7 @@ public class ReportController {
     public Result<List<Long>> pv7() {
         List<Long> list = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
-            list.add(pvuvUtils.getPV(LocalDate.now().minusDays(i)));
+            list.add(pvuvUtil.getPV(LocalDate.now().minusDays(i)));
         }
         return Result.ok(list);
     }
@@ -83,7 +83,7 @@ public class ReportController {
     public Result<List<Long>> uv7() {
         List<Long> list = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
-            list.add(pvuvUtils.getUV(LocalDate.now().minusDays(i)));
+            list.add(pvuvUtil.getUV(LocalDate.now().minusDays(i)));
         }
         return Result.ok(list);
     }

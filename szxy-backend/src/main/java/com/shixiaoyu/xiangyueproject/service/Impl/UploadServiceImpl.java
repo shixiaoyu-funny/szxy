@@ -2,7 +2,7 @@ package com.shixiaoyu.xiangyueproject.service.Impl;
 
 import com.shixiaoyu.xiangyueproject.exception.BusinessException;
 import com.shixiaoyu.xiangyueproject.service.UploadService;
-import com.shixiaoyu.xiangyueproject.util.UploadUtils;
+import com.shixiaoyu.xiangyueproject.utils.UploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @RequiredArgsConstructor
 public class UploadServiceImpl implements UploadService {
-    private final UploadUtils uploadUtils;
+    private final UploadUtil uploadUtil;
 
     @Override
     public String upload(MultipartFile file) {
@@ -20,7 +20,7 @@ public class UploadServiceImpl implements UploadService {
         try {
             byte[] bytes = file.getBytes();
             String name = file.getOriginalFilename();
-            return uploadUtils.upload(bytes, name);
+            return uploadUtil.upload(bytes, name);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {

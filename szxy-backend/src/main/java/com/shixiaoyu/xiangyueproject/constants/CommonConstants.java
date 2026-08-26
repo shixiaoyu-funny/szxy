@@ -7,9 +7,6 @@ import java.util.regex.Pattern;
  */
 public class CommonConstants {
 
-    /** 请求属性中存储的用户ID */
-    public static final String ATTR_USER_ID = "userId";
-
     public static final String PHONE_REGEX = "^1[3-9]\\d{9}$";
     public static final String EMAIL_REGEX = "^(?=.{1,64}@)[\\p{L}0-9_+&*-]+(?:\\.[\\p{L}0-9_+&*-]+)*@" +
             "(?:[\\p{L}0-9-]+\\.)+[\\p{L}]{2,}$";
@@ -17,7 +14,7 @@ public class CommonConstants {
     public static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
     /** RabbitMQ 验证码交换机、队列、路由键 */
-    public static final String VERIFY_EXCHANGE_NAME = "szxy.direct";
+    public static final String EXCHANGE_NAME = "szxy.direct";
     public static final String EMAIL_QUEUE_NAME = "direct.email";
     public static final String EMAIL_ROUTING_KEY = "email.verify";
     public static final String PHONE_QUEUE_NAME = "direct.phone";
@@ -29,4 +26,7 @@ public class CommonConstants {
 
     /** OSS 访问前缀 */
     public static final String OSS_PREFIX = "https://shixiaoyu-funny.oss-cn-beijing.aliyuncs.com/";
+    /** RabbitMQ AI聊天异步存储交换机、队列、路由键 */
+    public static final String CHAT_QUEUE_NAME = "direct.chat";
+    public static final String CHAT_ROUTING_KEY = "chat.save";
 }

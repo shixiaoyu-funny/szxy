@@ -27,12 +27,13 @@ import com.shixiaoyu.xiangyueproject.mapper.UserCommentMapper;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.ScenicService;
-import com.shixiaoyu.xiangyueproject.util.SecurityUtils;
+import com.shixiaoyu.xiangyueproject.utils.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,10 +59,10 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public void register(ScenicDTO dto) {
-        if (!SecurityUtils.isFarmerOrAbove()) {
+        if (!SecurityUtil.isFarmerOrAbove()) {
             throw new BusinessException("权限不足：仅农户/村长可新增景点");
         }
-        Long currentUserId = SecurityUtils.currentUserId();
+        Long currentUserId = SecurityUtil.currentUserId();
         FarmerUser fu = farmerMapper.selectOne(new LambdaQueryWrapper<FarmerUser>()
                 .eq(FarmerUser::getUserId, currentUserId).last("limit 1"));
         if (fu == null || fu.getVillageId() == null) {
@@ -119,22 +120,23 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
             }
         }
         List<UserComment> comments = userCommentMapper.selectList(new LambdaQueryWrapper<UserComment>()
-                .eq(UserComment::getScenicId, id).orderByDesc(UserComment::getCreateTime));
+                .eq(UserComment::getScenicId, id).orderByAsc(UserComment::getCreateTime));
         List<UserCommentVO> voList = comments.stream().map(c -> BeanUtil.copyProperties(c, UserCommentVO.class))
                 .collect(Collectors.toList());
-        fillCommentUsernames(voList, comments);
+        fillCommentUsers(voList, comments);
+        List<UserCommentVO> tree = buildCommentTree(voList);
         int ttl = RandomUtil.randomInt(0, 401) + RedisConstants.USER_COMMENTS_TTL;
         try {
-            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(voList), ttl, TimeUnit.SECONDS);
+            stringRedisTemplate.opsForValue().set(key, objectMapper.writeValueAsString(tree), ttl, TimeUnit.SECONDS);
         } catch (Exception e) {
             log.error("景点评论缓存写入失败，key:{}", key, e);
         }
-        return voList;
+        return tree;
     }
 
     @Override
     public PageResultVO<ScenicVO> adminList(PageResultDTO pageResultDTO) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         int pageNo = pageResultDTO.getPageNo() == null || pageResultDTO.getPageNo() < 1 ? 1 : pageResultDTO.getPageNo();
         int pageSize = pageResultDTO.getPageSize() == null || pageResultDTO.getPageSize() < 1 ? 10 : pageResultDTO.getPageSize();
         Page<VillageScenic> page = scenicMapper.selectPage(Page.of(pageNo, pageSize),
@@ -142,18 +144,19 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
         List<ScenicVO> voList = page.getRecords().stream().map(s -> BeanUtil.copyProperties(s, ScenicVO.class))
                 .collect(Collectors.toList());
         fillScenicVillageNames(voList);
+        fillScenicCreatorNames(voList);
         return new PageResultVO<>(page.getTotal(), voList);
     }
 
     @Override
     public void adminAdd(Long villageId, ScenicDTO dto) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         if (villageMapper.selectById(villageId) == null) {
             throw new BusinessException("该村落不存在");
         }
         VillageScenic scenic = BeanUtil.copyProperties(dto, VillageScenic.class);
         scenic.setVillageId(villageId);
-        scenic.setUserId(SecurityUtils.currentUserId());
+        scenic.setUserId(SecurityUtil.currentUserId());
         scenic.setLikes(0);
         scenic.setCollections(0);
         if (scenic.getPrice() == null) {
@@ -167,7 +170,7 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public void adminUpdate(Long id, ScenicDTO dto) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         if (scenicMapper.selectById(id) == null) {
             throw new BusinessException(ErrorConstants.DATA_NOT_EXIST);
         }
@@ -178,7 +181,7 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
 
     @Override
     public void adminDelete(Long id) {
-        SecurityUtils.requireAdmin();
+        SecurityUtil.requireAdmin();
         if (scenicMapper.deleteById(id) != 1) {
             throw new BusinessException(ErrorConstants.ERROR_DELETE);
         }
@@ -195,21 +198,102 @@ public class ScenicServiceImpl extends ServiceImpl<ScenicMapper, VillageScenic> 
         if (villageIds.isEmpty()) {
             return;
         }
-        Map<Long, String> nameMap = villageMapper.selectBatchIds(villageIds).stream()
+        Map<Long, String> nameMap = villageMapper.selectByIds(villageIds).stream()
                 .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
         voList.forEach(v -> v.setVillageName(nameMap.get(v.getVillageId())));
     }
 
-    private void fillCommentUsernames(List<UserCommentVO> voList, List<UserComment> comments) {
+    private void fillScenicCreatorNames(List<ScenicVO> voList) {
+        if (voList.isEmpty()) {
+            return;
+        }
+        Set<Long> userIds = voList.stream().map(ScenicVO::getUserId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        if (userIds.isEmpty()) {
+            return;
+        }
+        Map<Long, String> nameMap = userMapper.selectByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getUsername, (a, b) -> a));
+        voList.forEach(v -> v.setCreatorName(nameMap.get(v.getUserId())));
+    }
+
+    private void fillCommentUsers(List<UserCommentVO> voList, List<UserComment> comments) {
         if (comments.isEmpty()) {
             return;
         }
         Set<Long> userIds = comments.stream().map(UserComment::getUserId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, String> nameMap = userMapper.selectBatchIds(userIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getUsername, (a, b) -> a));
+        Map<Long, User> userMap = userMapper.selectByIds(userIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
         for (int i = 0; i < voList.size(); i++) {
-            voList.get(i).setUsername(nameMap.get(comments.get(i).getUserId()));
+            User u = userMap.get(comments.get(i).getUserId());
+            if (u != null) {
+                voList.get(i).setUsername(u.getUsername());
+                voList.get(i).setAvatar(u.getAvatar());
+            }
+            if (voList.get(i).getReplies() == null) {
+                voList.get(i).setReplies(new ArrayList<>());
+            }
         }
+    }
+
+    /** 组装楼中楼：一级 parentId 为空；子评论全部展平挂到所属根评论的 replies（B 站式） */
+    private List<UserCommentVO> buildCommentTree(List<UserCommentVO> flat) {
+        Map<Long, UserCommentVO> byId = flat.stream()
+                .filter(v -> v.getId() != null)
+                .collect(Collectors.toMap(UserCommentVO::getId, v -> v, (a, b) -> a));
+        List<UserCommentVO> roots = new ArrayList<>();
+        for (UserCommentVO vo : flat) {
+            if (vo.getReplies() == null) {
+                vo.setReplies(new ArrayList<>());
+            }
+            if (vo.getParentId() == null) {
+                roots.add(vo);
+            }
+        }
+        for (UserCommentVO vo : flat) {
+            if (vo.getParentId() == null) {
+                continue;
+            }
+            UserCommentVO root = findRoot(vo, byId);
+            if (root != null && !root.getId().equals(vo.getId())) {
+                if (root.getReplies() == null) {
+                    root.setReplies(new ArrayList<>());
+                }
+                root.getReplies().add(vo);
+            } else {
+                roots.add(vo);
+            }
+        }
+        roots.sort((a, b) -> {
+            if (a.getCreateTime() == null || b.getCreateTime() == null) {
+                return 0;
+            }
+            return b.getCreateTime().compareTo(a.getCreateTime());
+        });
+        for (UserCommentVO root : roots) {
+            if (root.getReplies() != null) {
+                root.getReplies().sort((a, b) -> {
+                    if (a.getCreateTime() == null || b.getCreateTime() == null) {
+                        return 0;
+                    }
+                    return a.getCreateTime().compareTo(b.getCreateTime());
+                });
+            }
+        }
+        return roots;
+    }
+
+    private UserCommentVO findRoot(UserCommentVO vo, Map<Long, UserCommentVO> byId) {
+        UserCommentVO cur = vo;
+        int guard = 0;
+        while (cur.getParentId() != null && guard++ < 32) {
+            UserCommentVO parent = byId.get(cur.getParentId());
+            if (parent == null) {
+                break;
+            }
+            cur = parent;
+        }
+        return cur.getParentId() == null ? cur : null;
     }
 }

@@ -2,7 +2,7 @@ package com.shixiaoyu.xiangyueproject.interceptor;
 
 import com.shixiaoyu.xiangyueproject.entity.dto.UserDTO;
 import com.shixiaoyu.xiangyueproject.enums.RoleEnum;
-import com.shixiaoyu.xiangyueproject.util.UserHolder;
+import com.shixiaoyu.xiangyueproject.utils.UserHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;

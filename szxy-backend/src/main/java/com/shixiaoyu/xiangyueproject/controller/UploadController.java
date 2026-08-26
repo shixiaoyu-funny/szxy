@@ -24,7 +24,7 @@ public class UploadController {
 
     @Operation(summary = "文件上传（图片等），返回OSS URL")
     @PostMapping
-    public Result<String> upload(@Parameter(description = "文件", name = "file", required = true)
+    public Result<String> upload(@Parameter(description = "文件", required = true)
                                  @NotNull @RequestParam MultipartFile file) {
         return Result.ok(uploadService.upload(file));
     }

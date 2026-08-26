@@ -9,7 +9,6 @@ import com.shixiaoyu.xiangyueproject.entity.vo.UserCommentVO;
 import com.shixiaoyu.xiangyueproject.service.ScenicService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +37,8 @@ public class ScenicController {
 
     @PostMapping("/rg")
     @Operation(summary = "农户/村长在所属村直接新增景点")
-    public Result<Void> register(@Parameter(description = "景点信息", name = "scenicDTO", required = true)
-                                 @Valid @RequestBody ScenicDTO scenicDTO) {
+    public Result<Void> register(
+            @Parameter(description = "景点信息", required = true) @Valid @RequestBody ScenicDTO scenicDTO) {
         scenicService.register(scenicDTO);
         return Result.ok();
     }
@@ -52,13 +51,13 @@ public class ScenicController {
 
     @GetMapping("/detail")
     @Operation(summary = "景点详情")
-    public Result<ScenicVO> detail(@Parameter(description = "景点id", name = "id", required = true) @RequestParam Long id) {
+    public Result<ScenicVO> detail(@Parameter(description = "景点id", required = true) @RequestParam Long id) {
         return Result.ok(scenicService.detail(id));
     }
 
     @GetMapping("/sccomments")
     @Operation(summary = "景点评论列表")
-    public Result<List<UserCommentVO>> scComments(@Parameter(description = "景点id", name = "id", required = true) @RequestParam Long id) {
+    public Result<List<UserCommentVO>> scComments(@Parameter(description = "景点id", required = true) @RequestParam Long id) {
         return Result.ok(scenicService.getScComments(id));
     }
 
@@ -73,8 +72,8 @@ public class ScenicController {
     @PostMapping("/new")
     @Operation(summary = "管理端：直接新增景点到指定村落")
     public Result<Void> adminAdd(
-            @Parameter(description = "农村id", name = "village_id", required = true, in = ParameterIn.QUERY) @RequestParam Long villageId,
-            @Parameter(description = "景点信息", name = "scenicDTO", required = true) @RequestBody ScenicDTO scenicDTO) {
+            @Parameter(description = "农村id", required = true) @RequestParam Long villageId,
+            @Parameter(description = "景点信息", required = true) @RequestBody ScenicDTO scenicDTO) {
         scenicService.adminAdd(villageId, scenicDTO);
         return Result.ok();
     }
@@ -82,8 +81,8 @@ public class ScenicController {
     @PostMapping("/modify/{id}")
     @Operation(summary = "管理端：修改景点")
     public Result<Void> adminUpdate(
-            @Parameter(description = "景点id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id,
-            @Parameter(description = "景点信息", name = "scenicDTO", required = true) @RequestBody ScenicDTO scenicDTO) {
+            @Parameter(description = "景点id", required = true) @PathVariable Long id,
+            @Parameter(description = "景点信息", required = true) @RequestBody ScenicDTO scenicDTO) {
         scenicService.adminUpdate(id, scenicDTO);
         return Result.ok();
     }
@@ -91,7 +90,7 @@ public class ScenicController {
     @PostMapping("/del/{id}")
     @Operation(summary = "管理端：删除景点")
     public Result<Void> adminDelete(
-            @Parameter(description = "景点id", name = "id", required = true, in = ParameterIn.PATH) @PathVariable Long id) {
+            @Parameter(description = "景点id", required = true) @PathVariable Long id) {
         scenicService.adminDelete(id);
         return Result.ok();
     }

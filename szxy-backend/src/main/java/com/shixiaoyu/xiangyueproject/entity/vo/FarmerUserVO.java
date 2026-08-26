@@ -1,6 +1,7 @@
 package com.shixiaoyu.xiangyueproject.entity.vo;
 
 import com.shixiaoyu.xiangyueproject.enums.BusinessTypeEnum;
+import com.shixiaoyu.xiangyueproject.enums.RoleEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 农户 VO（联查 user 取用户名/手机号）
+ * 农户 VO（联查 user 取用户名/手机号/角色）
  */
 @Data
 @AllArgsConstructor
@@ -25,6 +26,9 @@ public class FarmerUserVO {
     @Schema(description = "所属农村ID")
     private Long villageId;
 
+    @Schema(description = "所属村落名称")
+    private String villageName;
+
     @Schema(description = "经营类型：1民宿 2农产品 3文旅")
     private BusinessTypeEnum businessType;
 
@@ -33,6 +37,9 @@ public class FarmerUserVO {
 
     @Schema(description = "手机号")
     private String phone;
+
+    @Schema(description = "角色：1游客 2农户 3村长 4管理员")
+    private RoleEnum role;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
