@@ -46,8 +46,10 @@
         <el-table-column label="类型" width="100">
           <template #default="{ row }">{{ villageTypeText(pick(row, 'type', 'type')) }}</template>
         </el-table-column>
-        <el-table-column label="村长用户ID" width="110">
-          <template #default="{ row }">{{ pick(row, 'manageId', 'manage_id') ?? '—' }}</template>
+        <el-table-column label="村长" min-width="120">
+          <template #default="{ row }">
+            {{ pick(row, 'managerName', 'manager_name') || pick(row, 'manageId', 'manage_id') || '—' }}
+          </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -64,21 +66,47 @@
         <el-form-item label="农村名称" prop="name">
           <el-input v-model="form.name" placeholder="村落名称（唯一）" />
         </el-form-item>
-        <el-form-item label="村长用户ID" prop="manageId">
-          <el-input-number v-model="form.manageId" :min="0" :controls="false" placeholder="可选，对应 user.id" style="width: 100%" />
+        <el-form-item label="村长" prop="manageId">
+          <el-select
+            v-model="form.manageId"
+            clearable
+            filterable
+            placeholder="请选择村长（可空）"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="c in chiefOptions"
+              :key="c.userId"
+              :label="`${c.username}（ID ${c.userId}）`"
+              :value="c.userId"
+            />
+          </el-select>
+          <p v-if="!chiefOptions.length" class="field-tip">暂无村长，可先在「农户管理」建档并任命</p>
         </el-form-item>
         <el-form-item label="省 / 市 / 区县">
-          <div class="row-3">
-            <el-input v-model="form.province" placeholder="省" />
-            <el-input v-model="form.city" placeholder="市" />
-            <el-input v-model="form.county" placeholder="区县" />
-          </div>
+          <RegionCascader
+            v-model:province="form.province"
+            v-model:city="form.city"
+            v-model:county="form.county"
+            :disabled="dialogMode === 'view'"
+          />
         </el-form-item>
         <el-form-item label="经度 / 纬度">
           <div class="row-2">
-            <el-input v-model="form.longitude" placeholder="经度" />
-            <el-input v-model="form.latitude" placeholder="纬度" />
+            <!-- 回填后锁定：coordLocked 为 true 时灰色不可改 -->
+            <el-input
+              v-model="form.longitude"
+              placeholder="经度（选完省市区自动回填）"
+              :disabled="coordLocked || dialogMode === 'view'"
+            />
+            <el-input
+              v-model="form.latitude"
+              placeholder="纬度（选完省市区自动回填）"
+              :disabled="coordLocked || dialogMode === 'view'"
+            />
           </div>
+          <p v-if="coordLoading" class="field-tip">正在获取经纬度…</p>
+          <p v-else-if="coordLocked && dialogMode !== 'view'" class="field-tip">经纬度已自动回填并锁定；重选省市区将重新获取</p>
         </el-form-item>
         <el-form-item label="村落类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择" style="width: 100%">
@@ -92,7 +120,7 @@
           <el-input v-model="form.intro" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item label="封面图片" prop="image">
-          <el-input v-model="form.image" placeholder="URL，多图逗号分隔" />
+          <ImageUploader v-model="form.image" :disabled="dialogMode === 'view'" />
         </el-form-item>
         <el-form-item label="最佳游玩时间" prop="bestTime">
           <el-input v-model="form.bestTime" placeholder="如 3-5月" />
@@ -113,11 +141,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
-import { villageApi } from '../api';
+import { villageApi, farmerApi, positionApi } from '../api';
 import { pick as pickField, villageTypeText } from '../utils/adminFields';
+import { geocodeByRegion } from '../utils/amapGeocode';
+import ImageUploader from '../components/ImageUploader.vue';
+import RegionCascader from '../components/RegionCascader.vue';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -125,11 +156,22 @@ const villageList = ref<Record<string, unknown>[]>([]);
 const total = ref(0);
 const pageNo = ref(1);
 const pageSize = ref(10);
+const chiefOptions = ref<{ userId: number; username: string }[]>([]);
 
 const dialogVisible = ref(false);
 const dialogMode = ref<'add' | 'edit' | 'view'>('add');
 const editingId = ref<number | null>(null);
 const formRef = ref<FormInstance>();
+
+/** 经纬度是否锁定（自动回填后不可手改） */
+const coordLocked = ref(false);
+/** 正在请求 getPos / 高德 */
+const coordLoading = ref(false);
+/** 防并发：记录当前正在处理的省市区签名 */
+let coordRequestToken = 0;
+let lastRegionKey = '';
+/** 打开弹窗时跳过一次 watch（避免编辑回填触发重复请求） */
+let skipRegionWatch = false;
 
 const form = reactive({
   name: '',
@@ -163,6 +205,105 @@ function pick(row: Record<string, unknown>, camel: string, snake: string) {
 function cell(row: Record<string, unknown>, key: string) {
   return pickField(row, key, key) ?? '—';
 }
+
+function roleOf(row: Record<string, unknown>): number {
+  return Number(pickField(row, 'role', 'role'));
+}
+
+function regionKey(p: string, c: string, d: string) {
+  return `${p}|${c}|${d}`;
+}
+
+/**
+ * 省市区选完后的前端回调：
+ * 1) 优先 GET /pos/getPos 读 Redis
+ * 2) 经纬度为 null 则调高德地理编码
+ * 3) 回填并锁定输入框；miss 时再 POST /pos/savePos 写缓存
+ */
+async function onRegionReady(province: string, city: string, county: string) {
+  if (dialogMode.value === 'view') return;
+  const key = regionKey(province, city, county);
+  if (key === lastRegionKey && coordLocked.value) return;
+
+  const token = ++coordRequestToken;
+  coordLoading.value = true;
+  try {
+    // --- 1. 后端 Redis 缓存 ---
+    const cached = await positionApi.getPos(province, city, county);
+    if (token !== coordRequestToken) return;
+
+    const lon = cached?.longitude;
+    const lat = cached?.latitude;
+    if (lon != null && lat != null && String(lon) !== '' && String(lat) !== '') {
+      form.longitude = String(lon);
+      form.latitude = String(lat);
+      coordLocked.value = true;
+      lastRegionKey = key;
+      return;
+    }
+
+    // --- 2. 缓存未命中：前端调高德 Web 服务地理编码 ---
+    const geo = await geocodeByRegion(province, city, county);
+    if (token !== coordRequestToken) return;
+
+    form.longitude = geo.longitude;
+    form.latitude = geo.latitude;
+    coordLocked.value = true;
+    lastRegionKey = key;
+
+    // --- 3. 回写 Redis，供下次 getPos 命中 ---
+    await positionApi.savePos({
+      province,
+      city,
+      county,
+      longitude: geo.longitude,
+      latitude: geo.latitude
+    });
+  } catch (e) {
+    if (token !== coordRequestToken) return;
+    console.error(e);
+    ElMessage.warning(e instanceof Error ? e.message : '获取经纬度失败');
+    coordLocked.value = false;
+  } finally {
+    if (token === coordRequestToken) {
+      coordLoading.value = false;
+    }
+  }
+}
+
+/** 省市区变化：齐全则回调；清空则解锁并清空坐标 */
+watch(
+  () => [form.province, form.city, form.county] as const,
+  ([p, c, d]) => {
+    if (skipRegionWatch) return;
+    if (!p || !c || !d) {
+      // 未选全或清空：解锁，允许手动输入（或等待重新选择）
+      coordLocked.value = false;
+      form.longitude = '';
+      form.latitude = '';
+      lastRegionKey = '';
+      return;
+    }
+    onRegionReady(p, c, d);
+  }
+);
+
+const fetchChiefs = async () => {
+  try {
+    const res = await farmerApi.getFarmers();
+    const list = (res || []) as Record<string, unknown>[];
+    chiefOptions.value = list
+      .filter((r) => roleOf(r) === 3)
+      .map((r) => ({
+        userId: Number(pickField(r, 'userId', 'user_id')),
+        username: String(pickField(r, 'username', 'username') ?? `用户${pickField(r, 'userId', 'user_id')}`)
+      }))
+      .filter((c) => Number.isFinite(c.userId));
+  } catch (e) {
+    console.error(e);
+    chiefOptions.value = [];
+  }
+};
 
 const fetchVillageList = async () => {
   loading.value = true;
@@ -210,26 +351,51 @@ function resetForm() {
   form.bestTime = '';
   form.activity = '';
   form.contact = '';
+  coordLocked.value = false;
+  lastRegionKey = '';
+}
+
+async function openDialog(mode: 'add' | 'edit' | 'view', row?: Record<string, unknown>) {
+  dialogMode.value = mode;
+  skipRegionWatch = true;
+  if (mode === 'add') {
+    resetForm();
+  } else if (row) {
+    editingId.value = Number(row.id);
+    rowToForm(row);
+    // 编辑/查看：库中已有经纬度则直接锁定
+    const hasCoord =
+      form.longitude !== '' &&
+      form.longitude != null &&
+      form.latitude !== '' &&
+      form.latitude != null;
+    coordLocked.value = !!hasCoord;
+    if (form.province && form.city && form.county) {
+      lastRegionKey = regionKey(form.province, form.city, form.county);
+    }
+  }
+  await fetchChiefs();
+  if (form.manageId != null && !chiefOptions.value.some((c) => c.userId === form.manageId)) {
+    const name = row ? String(pickField(row, 'managerName', 'manager_name') || `用户${form.manageId}`) : `用户${form.manageId}`;
+    chiefOptions.value = [...chiefOptions.value, { userId: form.manageId, username: name }];
+  }
+  dialogVisible.value = true;
+  // 下一拍再允许 watch，避免打开时误触发高德
+  queueMicrotask(() => {
+    skipRegionWatch = false;
+  });
 }
 
 function openAdd() {
-  dialogMode.value = 'add';
-  resetForm();
-  dialogVisible.value = true;
+  openDialog('add');
 }
 
 function openView(row: Record<string, unknown>) {
-  dialogMode.value = 'view';
-  editingId.value = Number(row.id);
-  rowToForm(row);
-  dialogVisible.value = true;
+  openDialog('view', row);
 }
 
 function openEdit(row: Record<string, unknown>) {
-  dialogMode.value = 'edit';
-  editingId.value = Number(row.id);
-  rowToForm(row);
-  dialogVisible.value = true;
+  openDialog('edit', row);
 }
 
 function buildPayload(): Record<string, unknown> {
@@ -321,17 +487,17 @@ onMounted(() => {
   justify-content: flex-end;
 }
 
-.row-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  width: 100%;
-}
-
 .row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   width: 100%;
+}
+
+.field-tip {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.4;
 }
 </style>

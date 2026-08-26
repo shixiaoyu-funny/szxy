@@ -1,5 +1,5 @@
 /**
- * 管理端兼容后端全局 SNAKE_CASE 序列化：表格行可能为 camelCase 或 snake_case。
+ * 读取表格行字段（优先小驼峰；兼容旧 snake_case 响应）。
  */
 export function pick<T = unknown>(row: Record<string, unknown> | null | undefined, camel: string, snake: string): T | undefined {
   if (row == null) return undefined;
@@ -38,4 +38,12 @@ export function scenicTypeText(type: unknown): string {
   const t = Number(type);
   const m: Record<number, string> = { 1: '自然景观', 2: '人文景观', 3: '娱乐体验', 4: '民俗体验' };
   return m[t] || '—';
+}
+
+export function formatScenicPrice(price: unknown, empty = '—'): string {
+  if (price == null || price === '') return empty;
+  const n = Number(price);
+  if (Number.isNaN(n)) return empty;
+  if (n === 0) return '免费';
+  return `¥${n}`;
 }

@@ -1,0 +1,125 @@
+html,body{
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+}
+.content{
+    width: 92.5rem;
+    padding: 0 1rem;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 5rem;
+}
+.content-info{
+    display: none;
+}
+.content-title{
+    height: 2.14rem;
+    padding: 2rem 0;
+    line-height: 2.14rem;
+    font-size: 1.14rem;
+    cursor: pointer;
+}
+.content-title a{
+    font-size: 1.2rem;
+    color: #337ab7;
+}
+.content-title a:hover{
+    color: #215a8b;
+}
+.condition{
+    width: calc(100% - 3.57rem);
+    height: 7.14rem;
+    font-size: 1.07rem;
+    line-height: 7.14rem;
+    padding-left: 3.57rem;
+}
+.condition-input{
+    width: 10.71rem;
+    height: 2.714rem;
+    display: inline-block;
+    border: 0;
+    background-color: #f3f7f7;
+}
+.btn-warning{
+    color: #fff;
+    margin-right: 5px;
+    border: 0;
+    padding: 9px 12px 9px 12px;
+    background-color: #f0ad4e;
+}
+.btn-warning:hover{
+    background-color: #f09e29;
+}
+.layui-table{
+    table-layout: fixed;
+}
+.list{
+    padding: 0 15px;
+}
+.nameTitle{
+    color: #337ab7;
+    cursor: pointer;
+    text-decoration: none;
+}
+.nameTitle:hover{
+    color: #245681;
+}
+.titleName{
+    float: left;
+}
+.year{
+    height: 38px;
+    background-color: #f3f7f7;
+    border: 0px;
+    width: 150px;
+    margin-top: 30px;
+}
+.layui-table th{
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px solid #ddd;
+    padding: 15px 0 15px 15px !important;
+    background-color: white;
+    font-size: 16px;
+    font-weight: 900;
+    text-align: center !important;
+}
+.layui-table td{
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 1px dashed #ddd;
+    background-color: white;
+    padding: 10px 0 10px 15px !important;
+    text-align: center !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.article{
+    margin-top: 15px;
+    width: calc(83.3% - 30px);
+    margin-left: auto;
+    margin-right: auto;
+}
+.title{
+    font-size: 18px;
+    font-weight:bold;
+    text-align:center;
+    padding-bottom:10px;
+}
+.source{
+    text-align:center;
+    padding:10px 0;
+    font-size: 15px;
+}
+.spread{
+    border-top:1px dashed #948989;
+    padding:10px 0 20px;
+}
+.consultContent{
+    padding:0 0 40px;  font-size: 16px !important;
+}

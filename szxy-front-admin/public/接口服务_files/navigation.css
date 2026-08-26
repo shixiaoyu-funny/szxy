@@ -1,0 +1,45 @@
+
+/* �����ؼ��ָ�����ʾ */
+.highlight{
+background-color:#FFFF00; color:#FF0000}
+
+/*设置滚动条风格*/
+::-webkit-scrollbar {
+    width:5px;
+    height:10px;
+}
+::-webkit-scrollbar-button    {
+    display:none;
+}
+::-webkit-scrollbar-track     {
+    #background:#FF66D5;
+    background:#e3e3e3;
+}
+::-webkit-scrollbar-thumb{
+    border-radius:10px;
+    color: #8a6d3b;
+    background-color: #cccccc;
+}
+
+/**
+���Ĳ���ˮƽ����
+ */
+div{
+    margin-left:100px;
+}
+#token{
+	color:blue;
+	text-decoration:none;
+}
+#token:link{
+	color:blue;
+}
+#token:hover{
+	color:#F00
+}
+/*#token:visited{
+	color:blue;
+}*/
+
+
+

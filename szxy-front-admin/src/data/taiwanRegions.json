@@ -1,0 +1,1361 @@
+{
+  "code": "710000000000",
+  "name": "台湾省",
+  "level": 1,
+  "type": "省",
+  "children": [
+    {
+      "code": "710100000000",
+      "name": "台北市",
+      "level": 2,
+      "type": "直辖市",
+      "children": [
+        {
+          "code": "710101000000",
+          "name": "中正区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710102000000",
+          "name": "大同区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710103000000",
+          "name": "中山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710104000000",
+          "name": "松山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710105000000",
+          "name": "大安区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710106000000",
+          "name": "万华区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710107000000",
+          "name": "信义区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710108000000",
+          "name": "士林区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710109000000",
+          "name": "北投区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710110000000",
+          "name": "内湖区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710111000000",
+          "name": "南港区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710112000000",
+          "name": "文山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710200000000",
+      "name": "新北市",
+      "level": 2,
+      "type": "直辖市",
+      "children": [
+        {
+          "code": "710201000000",
+          "name": "板桥区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710202000000",
+          "name": "新庄区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710203000000",
+          "name": "中和区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710204000000",
+          "name": "永和区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710205000000",
+          "name": "土城区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710206000000",
+          "name": "树林区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710207000000",
+          "name": "三峡区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710208000000",
+          "name": "莺歌区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710209000000",
+          "name": "三重区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710210000000",
+          "name": "芦洲区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710211000000",
+          "name": "五股区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710212000000",
+          "name": "泰山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710213000000",
+          "name": "林口区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710214000000",
+          "name": "八里区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710215000000",
+          "name": "淡水区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710216000000",
+          "name": "三芝区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710217000000",
+          "name": "石门区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710218000000",
+          "name": "金山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710219000000",
+          "name": "万里区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710220000000",
+          "name": "汐止区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710221000000",
+          "name": "瑞芳区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710222000000",
+          "name": "贡寮区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710223000000",
+          "name": "平溪区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710224000000",
+          "name": "双溪区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710225000000",
+          "name": "新店区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710226000000",
+          "name": "深坑区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710227000000",
+          "name": "石碇区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710228000000",
+          "name": "坪林区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710229000000",
+          "name": "乌来区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710300000000",
+      "name": "桃园市",
+      "level": 2,
+      "type": "直辖市",
+      "children": [
+        {
+          "code": "710301000000",
+          "name": "桃园区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710302000000",
+          "name": "中坜区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710303000000",
+          "name": "平镇区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710304000000",
+          "name": "八德区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710305000000",
+          "name": "杨梅区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710306000000",
+          "name": "芦竹区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710307000000",
+          "name": "大溪区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710308000000",
+          "name": "龙潭区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710309000000",
+          "name": "龟山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710310000000",
+          "name": "大园区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710311000000",
+          "name": "观音区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710312000000",
+          "name": "新屋区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710313000000",
+          "name": "复兴区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710400000000",
+      "name": "台中市",
+      "level": 2,
+      "type": "直辖市",
+      "children": [
+        {
+          "code": "710401000000",
+          "name": "中区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710402000000",
+          "name": "东区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710403000000",
+          "name": "南区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710404000000",
+          "name": "西区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710405000000",
+          "name": "北区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710406000000",
+          "name": "北屯区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710407000000",
+          "name": "西屯区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710408000000",
+          "name": "南屯区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710409000000",
+          "name": "太平区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710410000000",
+          "name": "大里区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710411000000",
+          "name": "雾峰区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710412000000",
+          "name": "乌日区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710413000000",
+          "name": "丰原区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710414000000",
+          "name": "后里区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710415000000",
+          "name": "石冈区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710416000000",
+          "name": "东势区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710417000000",
+          "name": "新社区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710418000000",
+          "name": "潭子区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710419000000",
+          "name": "大雅区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710420000000",
+          "name": "神冈区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710421000000",
+          "name": "大肚区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710422000000",
+          "name": "沙鹿区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710423000000",
+          "name": "龙井区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710424000000",
+          "name": "梧栖区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710425000000",
+          "name": "清水区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710426000000",
+          "name": "大甲区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710427000000",
+          "name": "外埔区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710428000000",
+          "name": "大安区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710429000000",
+          "name": "和平区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710500000000",
+      "name": "台南市",
+      "level": 2,
+      "type": "直辖市",
+      "children": [
+        {
+          "code": "710501000000",
+          "name": "中西区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710502000000",
+          "name": "东区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710503000000",
+          "name": "南区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710504000000",
+          "name": "北区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710505000000",
+          "name": "安平区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710506000000",
+          "name": "安南区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710507000000",
+          "name": "永康区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710508000000",
+          "name": "归仁区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710509000000",
+          "name": "新化区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710510000000",
+          "name": "左镇区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710511000000",
+          "name": "玉井区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710512000000",
+          "name": "楠西区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710513000000",
+          "name": "南化区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710514000000",
+          "name": "仁德区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710515000000",
+          "name": "关庙区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710516000000",
+          "name": "龙崎区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710517000000",
+          "name": "官田区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710518000000",
+          "name": "麻豆区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710519000000",
+          "name": "佳里区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710520000000",
+          "name": "西港区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710521000000",
+          "name": "七股区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710522000000",
+          "name": "将军区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710523000000",
+          "name": "学甲区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710524000000",
+          "name": "北门区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710525000000",
+          "name": "新营区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710526000000",
+          "name": "后壁区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710527000000",
+          "name": "白河区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710528000000",
+          "name": "东山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710529000000",
+          "name": "六甲区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710530000000",
+          "name": "下营区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710531000000",
+          "name": "柳营区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710532000000",
+          "name": "盐水区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710533000000",
+          "name": "善化区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710534000000",
+          "name": "大内区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710535000000",
+          "name": "山上区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710536000000",
+          "name": "新市区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710537000000",
+          "name": "安定区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710600000000",
+      "name": "高雄市",
+      "level": 2,
+      "type": "直辖市",
+      "children": [
+        {
+          "code": "710601000000",
+          "name": "楠梓区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710602000000",
+          "name": "左营区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710603000000",
+          "name": "鼓山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710604000000",
+          "name": "三民区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710605000000",
+          "name": "盐埕区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710606000000",
+          "name": "前金区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710607000000",
+          "name": "新兴区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710608000000",
+          "name": "苓雅区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710609000000",
+          "name": "前镇区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710610000000",
+          "name": "旗津区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710611000000",
+          "name": "小港区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710612000000",
+          "name": "凤山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710613000000",
+          "name": "大寮区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710614000000",
+          "name": "鸟松区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710615000000",
+          "name": "林园区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710616000000",
+          "name": "仁武区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710617000000",
+          "name": "大树区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710618000000",
+          "name": "大社区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710619000000",
+          "name": "冈山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710620000000",
+          "name": "路竹区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710621000000",
+          "name": "桥头区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710622000000",
+          "name": "梓官区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710623000000",
+          "name": "弥陀区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710624000000",
+          "name": "永安区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710625000000",
+          "name": "燕巢区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710626000000",
+          "name": "田寮区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710627000000",
+          "name": "阿莲区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710628000000",
+          "name": "茄萣区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710629000000",
+          "name": "湖内区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710630000000",
+          "name": "旗山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710631000000",
+          "name": "美浓区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710632000000",
+          "name": "内门区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710633000000",
+          "name": "杉林区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710634000000",
+          "name": "甲仙区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710635000000",
+          "name": "六龟区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710636000000",
+          "name": "茂林区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710637000000",
+          "name": "桃源区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710638000000",
+          "name": "那玛夏区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710700000000",
+      "name": "基隆市",
+      "level": 2,
+      "type": "市",
+      "children": [
+        {
+          "code": "710701000000",
+          "name": "仁爱区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710702000000",
+          "name": "中正区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710703000000",
+          "name": "信义区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710704000000",
+          "name": "中山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710705000000",
+          "name": "安乐区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710706000000",
+          "name": "暖暖区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710707000000",
+          "name": "七堵区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710800000000",
+      "name": "新竹市",
+      "level": 2,
+      "type": "市",
+      "children": [
+        {
+          "code": "710801000000",
+          "name": "东区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710802000000",
+          "name": "北区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710803000000",
+          "name": "香山区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "710900000000",
+      "name": "嘉义市",
+      "level": 2,
+      "type": "市",
+      "children": [
+        {
+          "code": "710901000000",
+          "name": "东区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        },
+        {
+          "code": "710902000000",
+          "name": "西区",
+          "level": 3,
+          "type": "区",
+          "children": []
+        }
+      ]
+    },
+    {
+      "code": "711000000000",
+      "name": "新竹县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711100000000",
+      "name": "苗栗县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711200000000",
+      "name": "彰化县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711300000000",
+      "name": "南投县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711400000000",
+      "name": "云林县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711500000000",
+      "name": "嘉义县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711600000000",
+      "name": "屏东县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711700000000",
+      "name": "宜兰县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711800000000",
+      "name": "花莲县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "711900000000",
+      "name": "台东县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "712000000000",
+      "name": "澎湖县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "712100000000",
+      "name": "金门县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    },
+    {
+      "code": "712200000000",
+      "name": "连江县",
+      "level": 2,
+      "type": "县",
+      "children": []
+    }
+  ]
+}

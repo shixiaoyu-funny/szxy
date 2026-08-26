@@ -36,17 +36,17 @@
         <el-table-column label="景点名称" min-width="120">
           <template #default="{ row }">{{ pick(row, 'name', 'name') }}</template>
         </el-table-column>
-        <el-table-column label="村落ID" width="88">
-          <template #default="{ row }">{{ pick(row, 'villageId', 'village_id') }}</template>
+        <el-table-column label="所属村落" min-width="120">
+          <template #default="{ row }">{{ pick(row, 'villageName', 'village_name') || '—' }}</template>
         </el-table-column>
-        <el-table-column label="创建人" width="88">
-          <template #default="{ row }">{{ pick(row, 'userId', 'user_id') }}</template>
+        <el-table-column label="创建人" min-width="100">
+          <template #default="{ row }">{{ pick(row, 'creatorName', 'creator_name') || '—' }}</template>
         </el-table-column>
         <el-table-column label="类型" width="100">
           <template #default="{ row }">{{ scenicTypeText(pick(row, 'type', 'type')) }}</template>
         </el-table-column>
         <el-table-column label="价格" width="72">
-          <template #default="{ row }">{{ pick(row, 'price', 'price') ?? '—' }}</template>
+          <template #default="{ row }">{{ formatScenicPrice(pick(row, 'price', 'price')) }}</template>
         </el-table-column>
         <el-table-column label="住宿" width="72">
           <template #default="{ row }">
@@ -70,7 +70,7 @@
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" :disabled="dialogMode === 'view'">
         <el-form-item v-if="dialogMode === 'add'" label="所属农村" prop="villageId">
           <el-select v-model="form.villageId" placeholder="请选择村落" filterable style="width: 100%">
-            <el-option v-for="v in villageOptions" :key="v.id" :label="`${v.name}（ID ${v.id}）`" :value="v.id" />
+            <el-option v-for="v in villageOptions" :key="v.id" :label="String(v.name)" :value="v.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="景点名称" prop="name">
@@ -79,8 +79,8 @@
         <el-form-item label="介绍" prop="intro">
           <el-input v-model="form.intro" type="textarea" :rows="3" />
         </el-form-item>
-        <el-form-item label="图片 URL">
-          <el-input v-model="form.image" placeholder="多图逗号分隔" />
+        <el-form-item label="景点图片">
+          <ImageUploader v-model="form.image" :disabled="dialogMode === 'view'" />
         </el-form-item>
         <el-form-item label="门票价格">
           <el-input-number v-model="form.price" :min="0" style="width: 100%" />
@@ -116,7 +116,8 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { scenicApi, villageApi } from '../api';
-import { pick as pickField, scenicTypeText } from '../utils/adminFields';
+import { pick as pickField, scenicTypeText, formatScenicPrice } from '../utils/adminFields';
+import ImageUploader from '../components/ImageUploader.vue';
 
 const loading = ref(false);
 const saving = ref(false);
@@ -234,8 +235,8 @@ const submitForm = async () => {
       image: form.image || undefined,
       price: form.price || 0,
       type: form.type,
-      has_accommodation: form.hasAccommodation,
-      accommodation_info: form.accommodationInfo || undefined
+      hasAccommodation: form.hasAccommodation,
+      accommodationInfo: form.accommodationInfo || undefined
     };
     if (dialogMode.value === 'add') {
       if (form.villageId == null) {

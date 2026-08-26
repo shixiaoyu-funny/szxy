@@ -1,0 +1,279 @@
+﻿var common = {
+    getJson: function (url,ps) {
+        $.getJSON(url, ps, function (e) {
+            console.log(e);
+        });
+    },
+    resetDate: function (time){
+        let year = new Date(time).getFullYear();
+        year = year<10?"0"+year:year;
+        let month = new Date(time).getMonth() + 1;
+        month = month<10?"0"+month:month;
+        let date = new Date(time).getDate();
+        date = date<10?"0"+date:date;
+        let t = year+"-"+month+"-"+date;
+        return t;
+    },
+    childMenus:{
+        "dataresource":[
+            "<li><a href='search.html'>中国地名</a></li>",
+            "<li><a href='foreign.html'>外国地名</a></li>",
+            "<li><a href='ocean.html'>海底地名</a></li>",
+            "<li><a href='polar.html'>极地地名</a></li>",
+            "<li><a href='moon.html'>月球地名</a></li>"],
+        "datacolture":[
+            "<li><a href='ImgDicBook.html'>图录典志</a></li>",
+            "<li><a href='expert.html?type=3'>地名论稿</a></li>",
+            "<li><a href='expert.html?type=2'>地名故事</a></li>",
+            "<li><a href='placeWordSpecial.html'>地名用字</a></li>",
+            "<li><a href='videoShowList.html'>视频展播</a></li>",
+            "<li><a href='placeMeeting.html'>地名大会</a></li>"],
+        "dataservice":[
+            "<li class='mobileHide'><a href='resource.html'>资源下载</a></li>",
+            "<li><a href='sound.html'>地名原读音</a></li>",
+            "<li class='mobileHide'><a href='interface.html'>接口服务</a></li>"],
+        "datalaw":[
+            "<li><a href='policeLaw.html'>法规政策</a></li>",
+            "<li><a href='standard.html'>标准规范</a></li>"],
+        "datafeedback":[
+            "<li><a href='feedBack.html'>意见反馈</a></li>",
+            "<li><a href='searchFeedBack.html'>留言查询</a></li></ul>"],
+        "datanews":[
+            "<li><a href='nameChange.html'>地名公告</a></li>",
+            "<li><a href='dynamicWork.html'>工作动态</a></li>"]
+    },
+    setMobileMenu:function(){
+        if($(".mobile-menu-ul").length>0) {
+            console.log("--");
+            return;
+        }
+
+        let childMenus=common.childMenus;
+        let html=`<ul class="mobile-menu-ul">
+            <li class="mobile-menu-item pmenu"><a href='index.html' class='selected firstMenu'>首页</a></li>
+             <li class="mobile-menu-item pmenu">
+                <a href='us.html' class='selected firstMenu'>平台简介</a>
+               </li>
+             <li class='mobile-menu-item pmenu'>
+                <a class='hasChild firstMenu' opt='dataresource'>地名资源</a>
+                <ul class="mobile-menu-childwrap">${childMenus["dataresource"].join("")}</ul>
+             </li>
+             <li class='mobile-menu-item pmenu'>
+                <a class='hasChild firstMenu' opt='datanews'>地名资讯</a>
+                <ul class="mobile-menu-childwrap">${childMenus["datanews"].join("")}</ul>
+             </li>
+             <li class='mobile-menu-item pmenu mores'>
+                <a class='selected firstMenu' href="XzqhVersionPublish.html">行政区划代码</a>
+             </li>
+             <li class='mobile-menu-item pmenu mores'>
+                <a class='selected firstMenu' href="home.html">何方家国</a>
+             </li>
+             <li class='mobile-menu-item pmenu'>
+                <a class='hasChild firstMenu' opt='datacolture'>地名文化</a>
+                <ul class="mobile-menu-childwrap">${childMenus["datacolture"].join("")}</ul>
+             </li>
+             <li class='mobile-menu-item pmenu'>
+                <a class='hasChild firstMenu' opt='dataservice'>公共服务</a>
+                <ul class="mobile-menu-childwrap">${childMenus["dataservice"].join("")}</ul>
+              </li>
+             <li class='mobile-menu-item pmenu'>
+                <a class='hasChild firstMenu' opt='datalaw'>法规标准</a>
+                <ul class="mobile-menu-childwrap">${childMenus["datalaw"].join("")}</ul>
+             </li>
+             <li class='mobile-menu-item pmenu'>
+                <a class='hasChild firstMenu' opt='datafeedback'>意见建议</a>
+                <ul class="mobile-menu-childwrap">${childMenus["datafeedback"].join("")}</ul>
+             </li>
+        </ul>`;
+        $("body").append(html);
+    },
+    setHeader: function () {
+        let ary=[];
+        ary.push("<div class='logo'></div>");
+        ary.push("<div class='menu mouseMove'><ul class='menuList'>");
+        ary.push("<li class='menu-item sMenu'><a href='index.html' class='selected'>首页</a></li>");
+        ary.push("<li class='menu-item sMenu'><a href='us.html'>平台简介</a></li>");
+        ary.push("<li class='menu-item'><a class='hasChild' opt='dataresource'>地名资源</a></li>");
+        ary.push("<li class='menu-item'><a class='hasChild' opt='datanews'>地名资讯</a></li>");
+        ary.push("<li class='menu-item mores'><a href='XzqhVersionPublish.html'>行政区划代码</a></li>");
+        ary.push("<li class='menu-item mores'><a href='home.html'>何方家国</a></li>");
+        ary.push("<li class='menu-item'><a class='hasChild' opt='datacolture'>地名文化</a></li>");
+        ary.push("<li class='menu-item'><a class='hasChild' opt='dataservice'>公共服务</a></li>");
+        ary.push("<li class='menu-item'><a class='hasChild' opt='datalaw'>法规标准</a></li>");
+        ary.push("<li class='menu-item'><a class='hasChild' opt='datafeedback'>意见建议</a></li>");
+        ary.push("</ul></div>");
+        ary.push("<div class='menu-mobile'></div>");
+        $(".header").html(ary.join(""));
+        $(".header").before("<div class='bgMenu'></div>");
+        this.bindHeaderEvts();
+    },
+    setFooter: function () {
+        $(".footer").html('');
+        let ary = [];
+        ary.push('<ul class="footer-content">');
+        ary.push('<li class="dzjg"><span><a href="https://bszs.conac.cn/sitename?method=show&id=0627B8E6FCA778E5E053012819AC5523" target="_blank">');
+        ary.push('<img id="imgConac" vspace="0" hspace="0" border="0" src="img/index/red.png" data-bd-imgshare-binded="1"/></a></span></li>');
+        ary.push('<li class="signal"><p><span>主办方：民政部区划地名司</span><a href="us.html" class="link-us links">平台简介</a>');
+        ary.push('<a href="version.html" class="link-version links">版权声明</a><a href="contact.html" class="link-contact links">联系我们</a></p>');
+        ary.push('<p><span>版权所有：中华人民共和国民政部</span>  　网站标识码：bm12000003</p>');
+        ary.push('<p class="beian"><a href="https://beian.miit.gov.cn/#/Integrated/index" target="_blank">ICP备案编号：京ICP备13012430号</a>');
+        ary.push('<a class="beian-img" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11040102700079" target="_blank">');
+        ary.push('<img src="img/index/iocn_gabg.png" style="vertical-align: middle;">京公网安备11040102700079号</a></p></li>');
+        ary.push('<li class="erCode"><img width="80px" height="80px" src="img/qrcode.png"/><p>中国·国家地名信息库</p></li>');
+        ary.push('<li class="find"><a href="https://zfwzgl.www.gov.cn/exposure/jiucuo.html?site_code=bm12000003" target="_blank">');
+        ary.push('<img src="img/index/jiucuo.png"/></a></li></ul>');
+
+        ary.push('<ul class="left-footer">');
+        ary.push('<li class="footer-item disperate"><a href="us.html">平台简介</a><a href="version.html" class="version">版权声明</a><a href="contact.html">联系我们</a></li>');
+        ary.push('<li class="logoTitle"><a href="https://bszs.conac.cn/sitename?method=show&id=0627B8E6FCA778E5E053012819AC5523">');
+        ary.push('<img width="60px" height="60px" src="img/index/red.png"/></a>');
+        ary.push('<div class="logContent"><p><a href="http://www.mca.gov.cn/">中华人民共和国民政部 版权所有</a></p>');
+        ary.push('<p><a href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=11040102700079">ICP备案编号：京ICP备13012430号</a></p></div></li></ul>');
+        $(".footer").html(ary.join(""))
+    },
+    showChildMenu:function(opt,offset){
+        let html=common.childMenus[opt]||[];
+        $(".header-child-menu-wrap").remove();
+        if(html.length>0)
+        {
+            // html.unshift("<div class='header-child-menu-wrap'>")
+            // html.push("</div>");
+            let dom=[];
+            let style="";
+            switch (opt) {
+                case "dataservice":
+                    style='style="text-align:right;"';
+                    break;
+                case "datalaw":
+                    style='style="text-align:right;"';
+                    break;
+                case "datafeedback":
+                    style='style="text-align:right;"';
+                    break;
+                case "":
+                    break;
+                default:
+                    break;
+            }
+            dom.push(`<div class='header-child-menu-wrap mouseMove' ${style} >`);
+            dom.push("<div class='after'></div>");
+            dom.push("<ul class='header-child-menu'>");
+            for(let i=0,len=html.length;i<len;i++){
+                dom.push(html[i]);
+            }
+            dom.push("</ul>");
+
+            dom.push("</div>");
+            $("body").append(dom.join("")).show(300);
+            $(".header-child-menu").off("mouseleave").on("mouseleave", function (e) {
+                $(".header-child-menu-wrap").hide();
+                e.stopPropagation();
+            });
+            console.log(offset);
+            let offset1=$(".menu-item").first().offset();
+            offset1.left = offset1.left + 200;
+            $(".header-child-menu-wrap").css("left",offset1.left+"px");
+            let left2=offset.left-offset1.left
+            $(".header-child-menu-wrap .after").css("left",left2+"px");
+        }else{
+
+        }
+    },
+    bindHeaderEvts:function() {
+        $(".menu-item").on("mouseover", function (e) {
+            let tag=$(e.target);
+            let opt=tag.attr("opt");
+            let offset=tag.offset();
+            common.showChildMenu(opt,offset);
+            e.stopPropagation();
+        })
+
+    }
+};
+$(function () {
+    common.setHeader();
+    common.setFooter();
+    $(".logo").on("click",function (e) {
+        window.location.href = "index.html";
+        e.stopPropagation();
+    });
+    $(".menu-mobile").click(function(e){
+        common.setMobileMenu();
+        let cls="selected";
+        $(".menu-mobile").toggleClass(cls);
+        $(".mobile-menu-ul").toggleClass(cls);
+        $(".bgMenu").css("display","block");
+        $("body").css("overflow","hidden");
+        console.log("++")
+        e.stopPropagation();
+    });
+    $(".bgMenu").click(function(e){
+        $(".menu-mobile").removeClass("selected");
+        $(".mobile-menu-ul").removeClass("selected");
+        $(".bgMenu").css("display","none");
+        $("body").css("overflow","auto");
+        e.stopPropagation();
+    });
+
+    $(".header").off("mouseleave").on("mouseleave", function (e) {
+        if($.contains($('.mouseMove')[0],e.target)||$.contains($('.mouseMove')[0]==e.target)){
+        }else{
+            setTimeout(function () {
+                $(".header-child-menu-wrap").hide();
+            },500)
+        }
+        e.stopPropagation();
+    });
+
+    let data = {};
+    let l = window.location.href.split("/");
+    data.htmlName = l[l.length - 1];
+    $.ajax({
+        url: "visit/addVisitLog",
+        data: data,
+        type: "POST",
+        dataType: "json",
+        success: function (e) {
+            console.log("进入页面："+data.htmlName);
+        }
+    })
+    getNation();
+})
+function getUrlParam(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
+    var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+    if (r != null) return unescape(r[2]); return null; //返回参数值
+}
+function setFeedBack(id){
+    $.ajax({
+        url: "https://zwfw.mca.gov.cn/webglbiz/interface/service/addApplicatioVisits",
+        data: {
+            "id":id
+        },
+        type: "POST",
+        dataType: "json",
+        success: function (e) {
+            console.log(e.code);
+        }
+    })
+}
+function getNation(){
+    let data = {};
+    data.pageNum = 1;
+    data.pageSize = 1;
+    data.type = 10;
+    //查询列表
+    $.ajax({
+        url: "expertsContributePub/getExpertsContributePubList",//"https://dmfw.mca.gov.cn/expertsContributePub/getExpertsContributePubList",
+        data: data,
+        type: "Get",
+        dataType: "json",
+        success: function (e) {
+            if(e.total>0){
+                $(".mores").css("display","block");
+            }else{
+                $(".mores").css("display","none");
+            }
+        },
+    })
+}

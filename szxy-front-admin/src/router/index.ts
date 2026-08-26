@@ -3,6 +3,9 @@ import store from '../store'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior() {
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/login',
@@ -44,6 +47,18 @@ const router = createRouter({
           meta: { title: '农户管理' }
         },
         {
+          path: 'farmer-access',
+          name: 'farmerAccess',
+          component: () => import('../views/FarmerAccess.vue'),
+          meta: { title: '农户审批' }
+        },
+        {
+          path: 'vghead-access',
+          name: 'vgHeadAccess',
+          component: () => import('../views/VgHeadAccess.vue'),
+          meta: { title: '村长审批' }
+        },
+        {
           path: 'profile',
           name: 'profile',
           component: () => import('../views/Profile.vue'),
@@ -68,6 +83,19 @@ router.beforeEach((to, from, next) => {
     })
   } else {
     next()
+  }
+})
+
+/** 懒加载 chunk 失败（热更新/部署后旧缓存）时整页跳转，避免卡在空白 */
+router.onError((err, to) => {
+  const msg = String(err?.message || err || '')
+  const isChunkError =
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('Unable to preload CSS')
+  if (isChunkError && to?.fullPath) {
+    window.location.assign(to.fullPath)
   }
 })
 

@@ -81,7 +81,7 @@ export const scenicApi = {
     service.get('/sc/ls', { params: pageResultDTO }),
   /** 新增景点到指定村落 */
   add: (villageId: number, body: Record<string, unknown>): Promise<unknown> =>
-    service.post('/sc/new', body, { params: { village_id: villageId } }),
+    service.post('/sc/new', body, { params: { villageId } }),
   /** 修改景点 */
   update: (id: number, body: Record<string, unknown>): Promise<unknown> =>
     service.post(`/sc/modify/${id}`, body),
@@ -105,10 +105,26 @@ export const farmerApi = {
   getFarmers: (): Promise<unknown[]> => service.get('/fmr/all'),
   /** 建档农户（任意村，默认密码 123456） */
   createFarmer: (villageId: number, body: Record<string, unknown>): Promise<unknown> =>
-    service.post('/fmr/create', body, { params: { village_id: villageId } }),
+    service.post('/fmr/create', body, { params: { villageId } }),
   /** 任命/更换村长 */
   setManager: (villageId: number, farmerUserId: number): Promise<unknown> =>
-    service.post('/fmr/set-manager', null, { params: { village_id: villageId, farmer_user_id: farmerUserId } })
+    service.post('/fmr/set-manager', null, { params: { villageId, farmerUserId } })
+};
+
+/** 农户审批（`/fmr/access`） */
+export const farmerAccessApi = {
+  list: (params: { pageNo: number; pageSize: number; status?: number }): Promise<{ total: number; data: unknown[] }> =>
+    service.get('/fmr/access/list', { params }),
+  approve: (id: number): Promise<unknown> => service.post(`/fmr/access/${id}/approve`),
+  reject: (id: number): Promise<unknown> => service.post(`/fmr/access/${id}/reject`)
+};
+
+/** 村长审批（`/fmr/vghead`） */
+export const vgHeadAccessApi = {
+  list: (params: { pageNo: number; pageSize: number; status?: number }): Promise<{ total: number; data: unknown[] }> =>
+    service.get('/fmr/vghead/list', { params }),
+  approve: (id: number): Promise<unknown> => service.post(`/fmr/vghead/${id}/admin-approve`),
+  reject: (id: number): Promise<unknown> => service.post(`/fmr/vghead/${id}/admin-reject`)
 };
 
 export const uploadApi = {
@@ -116,4 +132,26 @@ export const uploadApi = {
     service.post('/upload', data, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
+};
+
+/**
+ * 省市区经纬度 Redis 缓存（后端 /pos，不直接调高德）
+ * getPos 未命中时 longitude/latitude 为 null，前端再调高德并 savePos
+ */
+export const positionApi = {
+  getPos: (province: string, city: string, county: string): Promise<{
+    province?: string;
+    city?: string;
+    county?: string;
+    longitude?: string | null;
+    latitude?: string | null;
+  }> => service.get('/pos/getPos', { params: { province, city, county } }),
+
+  savePos: (body: {
+    province: string;
+    city: string;
+    county: string;
+    longitude: string;
+    latitude: string;
+  }): Promise<unknown> => service.post('/pos/savePos', body)
 };

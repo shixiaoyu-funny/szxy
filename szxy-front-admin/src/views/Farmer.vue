@@ -32,8 +32,8 @@
         <el-table-column label="手机号" min-width="120">
           <template #default="{ row }">{{ pick(row, 'phone', 'phone') ?? '—' }}</template>
         </el-table-column>
-        <el-table-column label="村落ID" width="88">
-          <template #default="{ row }">{{ pick(row, 'villageId', 'village_id') ?? '—' }}</template>
+        <el-table-column label="所属村落" min-width="120">
+          <template #default="{ row }">{{ pick(row, 'villageName', 'village_name') || '—' }}</template>
         </el-table-column>
         <el-table-column label="经营类型" width="120">
           <template #default="{ row }">{{ farmerApplyBizText(pick(row, 'businessType', 'business_type')) }}</template>
@@ -204,8 +204,8 @@ const submitCreate = async () => {
     await farmerApi.createFarmer(form.villageId!, {
       username: form.username || undefined,
       phone: form.phone,
-      id_card: form.idCard || undefined,
-      business_type: form.businessType
+      idCard: form.idCard || undefined,
+      businessType: form.businessType
     });
     ElMessage.success('建档成功，初始密码 123456');
     createVisible.value = false;

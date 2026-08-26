@@ -28,7 +28,15 @@
           </el-menu-item>
           <el-menu-item index="/farmer">
             <el-icon><User /></el-icon>
-            <span>农户与村长资质</span>
+            <span>农户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/farmer-access">
+            <el-icon><Checked /></el-icon>
+            <span>农户审批</span>
+          </el-menu-item>
+          <el-menu-item index="/vghead-access">
+            <el-icon><UserFilled /></el-icon>
+            <span>村长审批</span>
           </el-menu-item>
           <el-menu-item index="/profile">
             <el-icon><Avatar /></el-icon>
@@ -64,9 +72,12 @@
         </el-header>
 
         <el-main class="layout-main">
-          <router-view v-slot="{ Component }">
+          <!-- 外层单根包裹：避免页面多根节点导致 transition out-in 卡住白屏 -->
+          <router-view v-slot="{ Component, route: viewRoute }">
             <transition name="fade" mode="out-in">
-              <component :is="Component" />
+              <div v-if="Component" :key="viewRoute.fullPath" class="route-view">
+                <component :is="Component" />
+              </div>
             </transition>
           </router-view>
         </el-main>
@@ -89,7 +100,9 @@ import {
   User,
   Avatar,
   SwitchButton,
-  ArrowDown
+  ArrowDown,
+  Checked,
+  UserFilled
 } from '@element-plus/icons-vue';
 import { loginApi } from '../api';
 import store from '../store';
@@ -101,6 +114,8 @@ const activeMenu = computed(() => {
   const p = route.path;
   if (p.startsWith('/scenic')) return '/scenic';
   if (p.startsWith('/village')) return '/village';
+  if (p.startsWith('/farmer-access')) return '/farmer-access';
+  if (p.startsWith('/vghead-access')) return '/vghead-access';
   if (p.startsWith('/farmer')) return '/farmer';
   if (p.startsWith('/profile')) return '/profile';
   return '/';
@@ -245,5 +260,9 @@ const handleLogout = async () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.route-view {
+  min-height: 100%;
 }
 </style>

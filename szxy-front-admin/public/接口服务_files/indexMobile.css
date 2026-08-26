@@ -1,0 +1,217 @@
+@media only screen and (max-width: 1400px){
+    .info-content{
+        min-width: auto;
+        width: 89rem;
+    }
+    .dynamicWork{
+        margin-right: 0;
+    }
+    .other{
+        width: auto;
+    }
+    .placeCulture{
+        width: 76.2rem;
+        min-width: auto;
+    }
+    .cul{
+        width: calc(20% - 7.3rem);
+    }
+    .cul .bgClass{
+        display: block;
+    }
+    .cul span{
+        display: none;
+    }
+
+    .link{
+        min-width: 76.2rem;
+    }
+    .link-nets{
+        min-width: 70.2rem;
+    }
+}
+@media only screen and (max-width: 1260px){
+    .info-content{
+        width: 43.5rem;
+    }
+}
+@media only screen and (max-width: 1067px){
+    .out-cul{
+        text-align: center;
+    }
+    .placeCulture{
+        width: 38.1rem;
+        display: inline-block;
+    }
+    .link{
+        display: none;
+    }
+}
+@media only screen and (max-width: 800px){
+    .village{
+        display: none;
+    }
+    .CSearch{
+        display: none;
+    }
+    .carousel{
+        /*height: auto;*/
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
+        background: none #fff;
+    }
+    .index-carousel{
+        height: auto;
+    }
+    .mapBottom{
+        display: none;
+    }
+    .placeMent-items{
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+    }
+    .yellow{
+        border: none;
+        box-shadow: none;
+        color: #1eadee;
+    }
+    .placeMenu{
+        float: left;
+        width: 20%;
+        height: 6rem;
+    }
+    .information{
+        padding: 0;
+        display: none;
+    }
+    .line{
+        display: none;
+    }
+    .info-content{
+        width: 100%;
+    }
+    .info-item{
+        width: calc(100% - 2rem);
+        min-width: auto;
+        height: auto;
+        margin: 0.5rem 0 0 0;
+        padding: 0 1rem;
+    }
+    .dynamicWork{
+        margin-bottom: 0.5rem;
+    }
+    .listTitle{
+        font-size: 1.3rem;
+        padding: 0.5rem 1.5rem;
+        margin-top: 1rem;
+    }
+    .more{
+        margin-top: 1.5rem;
+    }
+    .content-left{
+        font-size: 1.1rem;
+        width: calc(100% - 6.2rem);
+        height: 3.5rem;
+        line-height: 4rem;
+    }
+    .content-time{
+        width: 6.2rem;
+        height: 3.5rem;
+        line-height: 4rem;
+        font-size: 1rem;
+    }
+    .footer-content{
+        display: none;
+    }
+    .left-footer{
+        display: table;
+    }
+    .footer2{
+        padding: 2rem 0;
+    }
+}
+@media only screen and (max-width: 540px){
+    .mobile-menu-ul{
+        top: 4rem;
+    }
+    .header{
+        height: 4rem;
+        position: fixed;
+        top: 0;
+    }
+    .content{
+        margin-top: 4rem;
+    }
+
+    .menu-mobile{
+        top: 0.8rem;
+        height: 2.5rem;
+        width: 2.5rem;
+        background-size: 2.5rem;
+    }
+    .logo{
+        width: 20rem;
+        background: url(../img/logo-title.png) no-repeat 5rem center;
+        background-size: auto 2.2rem;
+    }
+    .logo:before{
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-top: 0.8rem;
+        margin-left: 1.5rem;
+        background-size: 3rem;
+    }
+    .placeCulture{
+        width: 100%;
+    }
+    .culture-item{
+        width: 16.66%;
+        min-width: auto;
+    }
+    .bgClass{
+        width: 16.66%;
+        min-width: auto;
+    }
+    .cul-title{
+        margin-left: calc(50% - 1rem);
+    }
+    .homeImg{
+        width: 100%;
+        min-width: auto;
+    }
+    .xzqhCode{
+        width: 100%;
+        height: 4rem;
+        line-height: 4rem;
+        min-width: auto;
+        font-size: 1rem;
+        background-size: 100% auto;
+    }
+}
+@media only screen and (max-width: 454px){
+    .info-content .other{
+        width: 100%;
+        display: none;
+    }
+    .other-item{
+        width: calc(33% - 2rem);
+        margin: 0 1rem 1rem 1rem;
+        font-size: 1rem;
+        height: 7.5rem;
+    }
+    .other-item img{
+        width: 2rem;
+        height: 2rem;
+    }
+    .information{
+        height: 4rem;
+        line-height: 4rem;
+
+    }
+    .title{
+        font-size: 1.5rem;
+    }
+}

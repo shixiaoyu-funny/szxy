@@ -1,0 +1,79 @@
+var baseUrl = {
+    mediaPrefix:"https://dmfw.mca.gov.cn/9091/dmgl/",
+    xzqhList: "xzqh/getList",
+    xzqhCountStatis:"xzqh/getStatis",
+    searchList: "stname/listPub",
+    searchDetail: "stname/detailsPub",
+    searchCount: "stname/count",
+    ///地名点击查询
+    placeExtQuery:"stname/list/extent/information",
+    //placeExtQuery:"stname/list/extent/information",
+    ///界线点击查询
+    boundaryExtQuery:"stname/list/extent/boundary",
+    boudnaryPicUrl:"https://dmfw.mca.gov.cn/9091/markers",
+   //boundaryMediaQueryUrl:"../place/photos/getMarkerByName.html",
+     boundaryMediaQueryUrl:"boundaryMedia/getPhotos",
+    //通知公告
+    announcementList: "announcement/getAnnouncementList",
+    announcementInfo: "announcement/getAnnouncementInfo",
+    getTwoList: "announcement/getTwoList",
+    //命名更名
+    getNameList: "name/getList",
+    getNameListOther: "name/getListOther",
+    getNameFive: "name/getListFive",
+    getNameFiveOther: "name/getListFiveOther",
+    //地名备案
+    approvalList: "approval/getApprovalList",
+    approvalInfo: "approval/getApprovalInfo",
+    //跨界地名
+    crossPlaceList: "crossPlace/getCrossPlaceList",
+    crossPlaceInfo: "crossPlace/getCrossPlaceInfo",
+    //工作动态
+    dynamicWorkList: "dynamicWork/getDynamicWorkList",
+    dynamicWorkInfo: "dynamicWork/getDynamicWorkInfo",
+    //乡村公告
+    countryList: "country/getCountryList",
+    countryList2: "country/getCountryList2",
+    countryInfo: "country/getCountryInfo",
+    //地名杂谈
+    expertsContributePubList: "expertsContributePub/getExpertsContributePubList",
+    expertsContributePubInfo: "expertsContributePub/getExpertsContributePubInfo",
+    //地名大会
+    placeMeetingList: "placeMeeting/getPlaceMeetingList",
+    //政策法规
+    policeLawsList: "policeLaws/getPoliceLawsList",
+    policeLawsInfo: "policeLaws/getPoliceLawsInfo",
+    //地名特殊字
+    placeWordSpecialList: "PlaceWordSpecial/getList",
+    placeWordSpecialInfo: "PlaceWordSpecial/getDetail",
+    //资源下载服务
+    serverResourceList: "serverResource/getServerResourceList",
+    //原读音
+    soundList: "sound/getSoundList",
+    soundInfo: "sound/getSoundInfo",
+    //问题反馈
+    addFeedBack: "feedback/addFeedBack",
+    getFeedback: "feedback/getFeedback",
+    //验证码
+    caption: "caption/captcha",
+    caption2: "caption/captchaquery",
+    //外国地名
+    foreignList: "foreign/getForeignList",
+    foreignInfo: "foreign/getForeignInfo",
+    foreignNext: "foreign/getNext",
+    foreignList2: "foreign/getForeignList2",
+    foreignInfo2: "foreign/getForeignInfo2",
+    //深空地名（月球，火星）
+    celestialList: "celestial/getList",
+    celestialInfo: "celestial/getDetail",
+    celestialType: "celestial/getTypes",
+    //海底地名
+    seaBottomList: "seaBottom/getList",
+    seaBottomInfo: "seaBottom/getDetail",
+    seaBottomType: "seaBottom/getWaters",
+    //极地地名
+    polarList: "polar/getList",
+    polarInfo: "polar/getDetail",
+    //年份
+    year: 0
+}
