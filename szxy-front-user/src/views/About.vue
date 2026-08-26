@@ -21,11 +21,19 @@
     <div class="about-section">
       <h2 class="section-title">技术栈</h2>
       <div class="tech-grid">
-        <div v-for="t in techStack" :key="t.name" class="tech-card">
+        <a
+          v-for="t in techStack"
+          :key="t.name"
+          class="tech-card"
+          :href="t.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          :title="`访问 ${t.name} 官网`"
+        >
           <span class="tech-name">{{ t.name }}</span>
           <span class="tech-cat">{{ t.cat }}</span>
           <p class="tech-desc">{{ t.desc }}</p>
-        </div>
+        </a>
       </div>
     </div>
 
@@ -61,16 +69,66 @@ const highlights = [
 ];
 
 const techStack = [
-  { name: 'Vue 3', cat: '前端', desc: '组合式 API + TypeScript，构建响应式单页应用' },
-  { name: 'Element Plus', cat: '前端', desc: '企业级 UI 组件库，统一美观的界面交互' },
-  { name: 'Vite', cat: '前端', desc: '极速开发构建，HMR 热更新体验' },
-  { name: 'Pinia', cat: '前端', desc: '轻量状态管理，跨组件共享用户会话' },
-  { name: 'Vue Router', cat: '前端', desc: '路由驱动页面导航与权限守卫' },
-  { name: 'Spring Boot', cat: '后端', desc: '简洁高效的服务端框架，快速构建 RESTful API' },
-  { name: 'MyBatis-Plus', cat: '后端', desc: 'ORM 持久层，简化数据访问与分页查询' },
-  { name: 'Redis', cat: '中间件', desc: '无状态会话存储，支持登录态高效续期与注销' },
-  { name: 'RabbitMQ', cat: '中间件', desc: '消息队列，支撑异步解耦与削峰' },
-  { name: 'MySQL', cat: '数据库', desc: '可靠的关系型数据库，承载核心业务数据' }
+  {
+    name: 'Vue 3',
+    cat: '前端',
+    desc: '组合式 API + TypeScript，构建响应式单页应用',
+    url: 'https://vuejs.org/'
+  },
+  {
+    name: 'Element Plus',
+    cat: '前端',
+    desc: '企业级 UI 组件库，统一美观的界面交互',
+    url: 'https://element-plus.org/'
+  },
+  {
+    name: 'Vite',
+    cat: '前端',
+    desc: '极速开发构建，HMR 热更新体验',
+    url: 'https://vite.dev/'
+  },
+  {
+    name: 'Pinia',
+    cat: '前端',
+    desc: '轻量状态管理，跨组件共享用户会话',
+    url: 'https://pinia.vuejs.org/'
+  },
+  {
+    name: 'Vue Router',
+    cat: '前端',
+    desc: '路由驱动页面导航与权限守卫',
+    url: 'https://router.vuejs.org/'
+  },
+  {
+    name: 'Spring Boot',
+    cat: '后端',
+    desc: '简洁高效的服务端框架，快速构建 RESTful API',
+    url: 'https://spring.io/projects/spring-boot'
+  },
+  {
+    name: 'MyBatis-Plus',
+    cat: '后端',
+    desc: 'ORM 持久层，简化数据访问与分页查询',
+    url: 'https://baomidou.com/'
+  },
+  {
+    name: 'Redis',
+    cat: '中间件',
+    desc: '无状态会话存储，支持登录态高效续期与注销',
+    url: 'https://redis.io/'
+  },
+  {
+    name: 'RabbitMQ',
+    cat: '中间件',
+    desc: '消息队列，支撑异步解耦与削峰',
+    url: 'https://www.rabbitmq.com/'
+  },
+  {
+    name: 'MySQL',
+    cat: '数据库',
+    desc: '可靠的关系型数据库，承载核心业务数据',
+    url: 'https://www.mysql.com/'
+  }
 ];
 </script>
 
@@ -169,10 +227,14 @@ const techStack = [
 }
 
 .tech-card {
+  display: block;
   padding: 16px;
   border-radius: 10px;
   background: #f9fbf7;
   border: 1px solid #eef4e6;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
@@ -180,6 +242,11 @@ const techStack = [
   border-color: #8BC34A;
   box-shadow: 0 4px 12px rgba(139, 195, 74, 0.2);
   transform: translateY(-2px);
+}
+
+.tech-card:focus-visible {
+  outline: 2px solid #8BC34A;
+  outline-offset: 2px;
 }
 
 .tech-name {

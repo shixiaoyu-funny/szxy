@@ -1,132 +1,152 @@
 <template>
   <div class="village-container">
-    <div class="village-tabs">
-      <button 
-        v-for="tab in tabs" 
-        :key="tab.value"
-        :class="['tab-btn', { active: activeTab === tab.value }]"
-        @click="activeTab = tab.value"
-      >
-        {{ tab.label }}
-      </button>
-    </div>
-    
-    <div class="village-content">
-      <div v-if="loading" class="loading-container">
-        <div class="loading"></div>
-        <p>加载中...</p>
-      </div>
-      <div v-else-if="error" class="error-container">
-        <p>{{ error }}</p>
-        <button class="btn btn-primary" @click="fetchVillageList">重试</button>
-      </div>
-      <div v-else class="village-list">
-        <div 
-          v-for="village in villageList" 
-          :key="village.id"
-          class="village-card"
+    <PageLoadingOverlay :visible="!pageReady" />
+
+    <div v-show="pageReady">
+      <div class="village-tabs" role="tablist">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          type="button"
+          role="tab"
+          :aria-selected="activeTab === tab.value"
+          :class="['tab-btn', { active: activeTab === tab.value }]"
+          @click="activeTab = tab.value"
         >
-          <div class="village-image">
-            <img :src="village.image" :alt="village.name" />
-          </div>
-          <div class="village-info">
-            <h3 class="village-name">{{ village.name }}</h3>
-            <p class="village-location">{{ village.province }} {{ village.city }} {{ village.county }}</p>
-            <p class="village-desc">{{ village.intro }}</p>
-            <div class="village-features">
-              <div class="feature-item" v-if="village.best_time">
-                <span class="feature-label">最佳游玩时间：</span>
-                <span class="feature-value">{{ village.best_time }}</span>
-              </div>
-              <div class="feature-item" v-if="village.activity">
-                <span class="feature-label">特色活动：</span>
-                <span class="feature-value">{{ village.activity }}</span>
-              </div>
-              <div class="feature-item" v-if="village.contact">
-                <span class="feature-label">联系电话：</span>
-                <span class="feature-value">{{ village.contact }}</span>
-              </div>
-              <div class="feature-item" v-if="village.contact">
-                <span class="feature-label">村长/负责人：</span>
-                <span class="feature-value">{{ village.manager_name }}</span>
-              </div>
-            </div>
-            <div class="village-stats">
-              <span class="stat-item" v-if="activeTab === 'likes'">❤️ {{ village.likes }}</span>
-              <span class="stat-item" v-if="activeTab === 'collects'">⭐ {{ village.collects }}</span>
-            </div>
-          </div>
+          {{ tab.label }}
+        </button>
+        <span class="tab-indicator" :class="{ right: activeTab === 'collects' }" />
+      </div>
+
+      <div class="village-content">
+        <div v-if="error" class="error-container">
+          <p>{{ error }}</p>
+          <button class="btn btn-primary" type="button" @click="fetchTopList">重试</button>
         </div>
+
+        <div v-else-if="!villageList.length" class="empty-container">
+          <p>暂无优质农村数据</p>
+        </div>
+
+        <ol v-else class="village-list">
+          <li
+            v-for="(village, index) in villageList"
+            :key="village.id"
+            class="village-row"
+            @click="goVillageDetail(village.id)"
+          >
+            <span class="rank" :class="rankClass(index)">{{ index + 1 }}</span>
+            <div class="village-image">
+              <img :src="coverOf(village)" :alt="village.name" />
+            </div>
+            <div class="village-info">
+              <div class="info-top">
+                <h3 class="village-name">{{ village.name }}</h3>
+                <span class="stat-value">
+                  <template v-if="activeTab === 'likes'">{{ village.likes ?? 0 }} 点赞</template>
+                  <template v-else>{{ village.collects ?? 0 }} 收藏</template>
+                </span>
+              </div>
+              <p class="village-location">
+                {{ [village.province, village.city, village.county].filter(Boolean).join(' · ') }}
+              </p>
+              <p v-if="village.intro" class="village-desc">{{ village.intro }}</p>
+            </div>
+          </li>
+        </ol>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, watch, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { getTopVillageByLikes, getTopVillageByCollections } from '../api/village';
+import { getErrorMessage } from '../api/axios';
+import PageLoadingOverlay from '../components/PageLoadingOverlay.vue';
+import { collectImageUrlsFromItems, preloadImages } from '../utils/preloadImages';
 
 interface Village {
   id: number;
-  manager_name: string;
+  managerName?: string;
   name: string;
-  province: string;
-  city: string;
-  county: string;
-  type: number;
-  intro: string;
-  image: string;
-  best_time: string;
-  activity: string;
-  contact: string;
-  likes: number;
-  collects: number;
+  province?: string;
+  city?: string;
+  county?: string;
+  type?: number;
+  intro?: string;
+  image?: string;
+  bestTime?: string;
+  activity?: string;
+  contact?: string;
+  likes?: number;
+  collects?: number;
 }
 
+const route = useRoute();
 const router = useRouter();
-const activeTab = ref('likes');
-const loading = ref(false);
+
+const activeTab = ref<'likes' | 'collects'>('likes');
+const pageReady = ref(false);
 const error = ref('');
 const villageList = ref<Village[]>([]);
 
 const tabs = [
-  { label: '按点赞排序', value: 'likes' },
-  { label: '按收藏排序', value: 'collects' }
+  { label: '按点赞排序', value: 'likes' as const },
+  { label: '按收藏排序', value: 'collects' as const }
 ];
 
-const goBack = () => {
-  router.back();
-};
+function rankClass(index: number) {
+  if (index === 0) return 'top1';
+  if (index === 1) return 'top2';
+  if (index === 2) return 'top3';
+  return '';
+}
 
-const fetchVillageList = async () => {
-  loading.value = true;
+function coverOf(village: Village) {
+  const raw = village.image || '';
+  return raw.split(',')[0]?.trim() || '';
+}
+
+function goVillageDetail(id: number) {
+  router.push(`/village/${id}`);
+}
+
+async function fetchTopList() {
+  pageReady.value = false;
   error.value = '';
-  
   try {
-    let res;
-    if (activeTab.value === 'likes') {
-      res = await getTopVillageByLikes();
-    } else {
-      res = await getTopVillageByCollections();
-    }
-    villageList.value = res.data;
-    console.log('农村列表：', villageList.value);
+    const res =
+      activeTab.value === 'likes'
+        ? await getTopVillageByLikes()
+        : await getTopVillageByCollections();
+    villageList.value = (res as { data?: Village[] }).data ?? [];
+    await preloadImages(collectImageUrlsFromItems(villageList.value));
   } catch (err) {
-    error.value = '获取农村信息失败，请重试';
-    console.error('获取农村信息失败:', err);
+    error.value = getErrorMessage(err);
   } finally {
-    loading.value = false;
+    pageReady.value = true;
   }
-};
-
-watch(activeTab, () => {
-  fetchVillageList();
-});
+}
 
 onMounted(() => {
-  fetchVillageList();
+  const q = String(route.query.q ?? '').trim();
+  if (q && route.path === '/village') {
+    router.replace({
+      path: '/search',
+      query: {
+        q,
+        type: String(route.query.type ?? '1')
+      }
+    });
+  }
 });
+
+watch(activeTab, () => {
+  if (route.path !== '/village' || String(route.query.q ?? '').trim()) return;
+  fetchTopList();
+}, { immediate: true });
 </script>
 
 <style scoped>
@@ -135,145 +155,178 @@ onMounted(() => {
   background: transparent;
 }
 
-.village-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-  background: linear-gradient(to right, #ee813990, #2cdf71d8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-  margin-right: 16px;
-}
-
-.back-btn:hover {
-  background: #f0f9e8;
-}
-
-.header-title {
-  font-size: 24px;
-  font-weight: 700;
-  color: #75ef1d;
-  flex: 1;
-  padding-top: 20px;
-}
-
 .village-tabs {
-  display: flex;
-  background: white;
-  margin: 12px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin: 12px 16px 8px;
+  padding: 4px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .tab-btn {
-  flex: 1;
-  padding: 12px;
+  position: relative;
+  z-index: 1;
+  padding: 10px 8px;
   border: none;
-  background: none;
-  font-size: 16px;
-  color: #666;
+  background: transparent;
+  font-size: 14px;
+  color: #888;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: color 0.2s ease;
 }
 
 .tab-btn.active {
-  background: #8BC34A;
-  color: white;
-  font-weight: 500;
+  color: #558b2f;
+  font-weight: 600;
+}
+
+.tab-indicator {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  width: calc(50% - 4px);
+  height: 3px;
+  border-radius: 2px;
+  background: #8bc34a;
+  transition: transform 0.25s ease;
+  pointer-events: none;
+}
+
+.tab-indicator.right {
+  transform: translateX(100%);
 }
 
 .village-content {
-  padding: 0 12px 24px;
+  padding: 0 16px 28px;
 }
 
-.loading-container,
-.error-container {
+.error-container,
+.empty-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 40vh;
   gap: 16px;
+  color: #888;
 }
 
 .error-container p {
   color: #f44336;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .village-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.village-row {
+  display: grid;
+  grid-template-columns: 28px 120px minmax(0, 1fr);
   gap: 12px;
-}
-
-.village-card {
-  background: white;
+  align-items: center;
+  padding: 10px;
+  background: #fff;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
 }
 
-.village-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+.village-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+.rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #aaa;
+  line-height: 1;
+}
+
+.rank.top1 { color: #e6a23c; }
+.rank.top2 { color: #909399; }
+.rank.top3 { color: #b87333; }
 
 .village-image {
-  width: 100%;
-  height: 180px;
+  width: 120px;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
   overflow: hidden;
+  background: #eef2e8;
+  flex-shrink: 0;
 }
 
 .village-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
+  display: block;
+  transition: transform 0.4s ease;
 }
 
-.village-card:hover .village-image img {
-  transform: scale(1.05);
+.village-row:hover .village-image img {
+  transform: scale(1.04);
 }
 
 .village-info {
-  padding: 16px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 4px;
+}
+
+.info-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .village-name {
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 4px;
-  color: #333;
+  color: #2d331f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-value {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: #7a8f5a;
 }
 
 .village-location {
-  font-size: 13px;
+  margin: 0;
+  font-size: 12px;
   color: #999;
-  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .village-desc {
-  font-size: 14px;
+  margin: 0;
+  font-size: 13px;
   color: #666;
-  margin-bottom: 12px;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -281,52 +334,24 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.village-features {
-  margin-bottom: 12px;
-}
-
-.feature-item {
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.feature-label {
-  color: #999;
-  margin-right: 4px;
-}
-
-.feature-value {
-  color: #666;
-}
-
-.village-stats {
-  display: flex;
-  gap: 16px;
-  font-size: 14px;
-  color: #999;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 @media (max-width: 480px) {
+  .village-row {
+    grid-template-columns: 24px 96px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+  }
+
   .village-image {
-    height: 160px;
+    width: 96px;
   }
-  
-  .village-info {
-    padding: 12px;
-  }
-  
+
   .village-name {
     font-size: 15px;
   }
-  
+
   .village-desc {
-    font-size: 13px;
+    -webkit-line-clamp: 1;
+    font-size: 12px;
   }
 }
 </style>

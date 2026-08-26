@@ -25,14 +25,14 @@ export const registerScenic = (data: any) => {
 // 管理端：分页全部景点
 export const adminListScenic = (pageNo: number, pageSize: number) => {
   return axios.get('/sc/ls', {
-    params: { page_no: pageNo, page_size: pageSize }
+    params: { pageNo, pageSize }
   });
 };
 
 // 管理端：直接新增景点
 export const adminAddScenic = (villageId: number, data: any) => {
   return axios.post('/sc/new', data, {
-    params: { village_id: villageId }
+    params: { villageId }
   });
 };
 

@@ -27,8 +27,8 @@
         <div class="item-info">
           <h3 class="item-name">{{ item.name }}</h3>
           <p v-if="item.villageName" class="item-village">{{ item.villageName }}</p>
-          <p v-if="item.price !== null" class="item-price">
-            {{ item.price === 0 ? '免费' : `¥${item.price}` }}
+          <p v-if="hasScenicPrice(item.price)" class="item-price">
+            {{ formatScenicPrice(item.price) }}
           </p>
           <div class="item-stats">
             <span class="stat-item">❤️ {{ item.likes || 0 }}</span>
@@ -45,6 +45,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { getLikes } from '../api/profile';
+import { formatScenicPrice, hasScenicPrice } from '../utils/scenicPrice';
 
 interface ScenicVO {
   id: number;

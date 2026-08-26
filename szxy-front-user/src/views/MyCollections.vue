@@ -1,11 +1,8 @@
 <template>
   <div class="my-collections-container">
-    <div v-if="loading" class="loading-container">
-      <div class="loading"></div>
-      <p>加载中...</p>
-    </div>
-
-    <div v-else-if="error" class="error-container">
+    <PageLoadingOverlay :visible="!pageReady" />
+    <div v-show="pageReady">
+    <div v-if="error" class="error-container">
       <p>{{ error }}</p>
       <button class="btn btn-primary" @click="fetchCollections">重试</button>
     </div>
@@ -27,8 +24,8 @@
         <div class="item-info">
           <h3 class="item-name">{{ item.name }}</h3>
           <p v-if="item.villageName" class="item-village">{{ item.villageName }}</p>
-          <p v-if="item.price !== null" class="item-price">
-            {{ item.price === 0 ? '免费' : `¥${item.price}` }}
+          <p v-if="hasScenicPrice(item.price)" class="item-price">
+            {{ formatScenicPrice(item.price) }}
           </p>
           <div class="item-stats">
             <span class="stat-item">❤️ {{ item.likes || 0 }}</span>
@@ -36,6 +33,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -45,6 +43,9 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { getCollects } from '../api/profile';
+import PageLoadingOverlay from '../components/PageLoadingOverlay.vue';
+import { collectImageUrlsFromItems, preloadImages } from '../utils/preloadImages';
+import { formatScenicPrice, hasScenicPrice } from '../utils/scenicPrice';
 
 interface ScenicVO {
   id: number;
@@ -62,7 +63,7 @@ interface ScenicVO {
 
 const router = useRouter();
 const collections = ref<ScenicVO[]>([]);
-const loading = ref(true);
+const pageReady = ref(false);
 const error = ref('');
 
 const goBack = () => {
@@ -79,12 +80,13 @@ const navigateToDetail = (id: number) => {
 };
 
 const fetchCollections = async () => {
-  loading.value = true;
+  pageReady.value = false;
   error.value = '';
   try {
     const res = await getCollects();
     if (res.data) {
       collections.value = res.data;
+      await preloadImages(collectImageUrlsFromItems(collections.value));
       ElMessage.success('获取历史收藏景点列表成功');
     }
   } catch (err) {
@@ -92,7 +94,7 @@ const fetchCollections = async () => {
     error.value = '获取历史收藏景点列表失败，请重试';
     ElMessage.error('获取历史收藏景点列表失败，请重试');
   } finally {
-    loading.value = false;
+    pageReady.value = true;
   }
 };
 

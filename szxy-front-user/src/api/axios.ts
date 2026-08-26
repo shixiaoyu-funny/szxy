@@ -2,6 +2,20 @@ import axios from 'axios';
 import { useUserStore } from '../stores/user';
 import router from '../router';
 
+/** 仅提取后端返回的 message，不构造前端文案 */
+export function getErrorMessage(err: unknown): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === 'object' && err !== null) {
+    const e = err as {
+      message?: string;
+      response?: { data?: { message?: string } };
+    };
+    if (e.response?.data?.message) return e.response.data.message;
+    if (e.message) return e.message;
+  }
+  return '';
+}
+
 const instance = axios.create({
   baseURL: '/api',
   timeout: 30000,
@@ -33,22 +47,18 @@ instance.interceptors.response.use(
         userStore.logout();
         router.push('/login');
       }
-      return Promise.reject(new Error(res.message || '请求失败'));
+      return Promise.reject(new Error(res.message ?? ''));
     }
     return res;
   },
   error => {
     console.error('API Error:', error);
-    // 处理 HTTP 非 2xx（拦截器级 401/403 等）
     if (error.response && error.response.status === 401) {
       const userStore = useUserStore();
       userStore.logout();
       router.push('/login');
     }
-    if (error.response && error.response.status === 403) {
-      return Promise.reject(new Error(error.response.data?.message || '权限不足'));
-    }
-    return Promise.reject(error);
+    return Promise.reject(new Error(getErrorMessage(error)));
   }
 );
 

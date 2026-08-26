@@ -18,13 +18,13 @@
         <h3 class="village-name">{{ village.name }}</h3>
         <p class="village-location">{{ village.province }} {{ village.city }} {{ village.county }}</p>
         <p class="village-desc">{{ village.intro }}</p>
-        <div class="feature-item" v-if="village.manager_name">
+        <div class="feature-item" v-if="village.managerName">
           <span class="feature-label">村长：</span>
-          <span class="feature-value">{{ village.manager_name }}</span>
+          <span class="feature-value">{{ village.managerName }}</span>
         </div>
-        <div class="feature-item" v-if="village.best_time">
+        <div class="feature-item" v-if="village.bestTime">
           <span class="feature-label">最佳游玩时间：</span>
-          <span class="feature-value">{{ village.best_time }}</span>
+          <span class="feature-value">{{ village.bestTime }}</span>
         </div>
         <div class="feature-item" v-if="village.activity">
           <span class="feature-label">特色活动：</span>
@@ -60,10 +60,10 @@ interface VillageVO {
   county: string;
   intro: string;
   image: string;
-  best_time: string;
+  bestTime: string;
   activity: string;
   contact: string;
-  manager_name: string;
+  managerName: string;
 }
 
 const router = useRouter();

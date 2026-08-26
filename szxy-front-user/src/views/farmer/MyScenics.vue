@@ -26,7 +26,7 @@
         <div class="item-info">
           <h3 class="item-name">{{ item.name }}</h3>
           <p class="item-intro">{{ item.intro }}</p>
-          <p class="item-price">{{ item.price === 0 ? '免费' : `¥${item.price}` }}</p>
+          <p class="item-price">{{ formatScenicPrice(item.price, { empty: '—' }) }}</p>
         </div>
       </div>
     </div>
@@ -37,6 +37,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getMyScenics } from '../../api/farmer';
+import { formatScenicPrice } from '../../utils/scenicPrice';
 
 interface ScenicVO {
   id: number;

@@ -53,9 +53,24 @@ export const getMyCollections = () => {
   return axios.get('/ur/collection');
 };
 
-// 搜索农村（多字段模糊+分页）
-export const searchVillage = (content?: string, pageNo?: number, pageSize?: number) => {
+// 搜索（type: 1-农村，2-景点）
+export const searchContent = (
+  content?: string,
+  type: number = 1,
+  pageNo?: number,
+  pageSize?: number
+) => {
   return axios.get('/ur/search', {
-    params: { content, page_no: pageNo, page_size: pageSize }
+    params: { content, type, pageNo, pageSize }
   });
 };
+
+/** @deprecated 请使用 searchContent(content, 1, ...) */
+export const searchVillage = (content?: string, pageNo?: number, pageSize?: number) =>
+  searchContent(content, 1, pageNo, pageSize);
+
+export const searchScenic = (content?: string, pageNo?: number, pageSize?: number) =>
+  searchContent(content, 2, pageNo, pageSize);
+
+/** 收到的点赞动态（消息页） */
+export const getLikesReceived = () => axios.get('/ur/msg/likes-received');

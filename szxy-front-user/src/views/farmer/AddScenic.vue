@@ -24,14 +24,14 @@
       </div>
       <div class="form-group">
         <label class="form-label">是否提供住宿</label>
-        <select v-model.number="form.has_accommodation" class="input">
+        <select v-model.number="form.hasAccommodation" class="input">
           <option :value="0">否</option>
           <option :value="1">是</option>
         </select>
       </div>
-      <div class="form-group" v-if="form.has_accommodation === 1">
+      <div class="form-group" v-if="form.hasAccommodation === 1">
         <label class="form-label">住宿详情</label>
-        <input v-model="form.accommodation_info" class="input" placeholder="房型/价格/联系方式等" />
+        <input v-model="form.accommodationInfo" class="input" placeholder="房型/价格/联系方式等" />
       </div>
       <div class="form-group">
         <label class="form-label">图片URL</label>
@@ -64,8 +64,8 @@ const form = reactive({
   intro: '',
   price: 0,
   type: 1,
-  has_accommodation: 0,
-  accommodation_info: '',
+  hasAccommodation: 0,
+  accommodationInfo: '',
   image: ''
 });
 
@@ -96,13 +96,13 @@ const submit = async () => {
   errorMessage.value = '';
   try {
     await registerScenic({
-      village_id: villageId.value,
+      villageId: villageId.value,
       name: form.name,
       intro: form.intro,
       price: form.price || 0,
       type: form.type,
-      has_accommodation: form.has_accommodation,
-      accommodation_info: form.accommodation_info,
+      hasAccommodation: form.hasAccommodation,
+      accommodationInfo: form.accommodationInfo,
       image: form.image
     });
     ElMessage.success('景点新增成功');

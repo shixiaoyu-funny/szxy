@@ -1,0 +1,17 @@
+@font-face {
+  font-family: "iconfont-light"; /* Project id  */
+  src: url('iconfont.ttf?t=1787220296056') format('truetype');
+}
+
+.iconfont-light {
+  font-family: "iconfont-light" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-dengguang:before {
+  content: "\e60f";
+}
+

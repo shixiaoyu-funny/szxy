@@ -23,11 +23,11 @@
         <div class="farmer-info">
           <h3 class="farmer-name">{{ item.username }}</h3>
           <p class="farmer-phone">{{ item.phone }}</p>
-          <p class="farmer-type">{{ businessTypeText(item.business_type) }}</p>
+          <p class="farmer-type">{{ businessTypeText(item.businessType) }}</p>
         </div>
         <div class="farmer-actions">
-          <button class="btn-edit" @click="openEdit(item)">改</button>
-          <button class="btn-del" @click="removeFarmer(item)">删</button>
+          <button class="btn-edit" @click="openEdit(item)">修改</button>
+          <button class="btn-del" @click="removeFarmer(item)">删除</button>
         </div>
       </div>
     </div>
@@ -43,10 +43,10 @@
           <input v-model="form.phone" class="input" placeholder="手机号（必填）" />
         </div>
         <div class="form-group">
-          <input v-model="form.id_card" class="input" placeholder="身份证号" />
+          <input v-model="form.idCard" class="input" placeholder="身份证号" />
         </div>
         <div class="form-group">
-          <select v-model.number="form.business_type" class="input">
+          <select v-model.number="form.businessType" class="input">
             <option :value="1">民宿经营者</option>
             <option :value="2">农产品销售者</option>
             <option :value="3">文旅服务者</option>
@@ -70,11 +70,11 @@ import { getVillageFarmers, addVillageFarmer, updateVillageFarmer, deleteVillage
 
 interface FarmerVO {
   id: number;
-  user_id: number;
-  village_id: number;
+  userId: number;
+  villageId: number;
   username: string;
   phone: string;
-  business_type: number;
+  businessType: number;
 }
 
 const router = useRouter();
@@ -88,8 +88,8 @@ const villageId = ref<number | null>(null);
 const form = reactive({
   username: '',
   phone: '',
-  id_card: '',
-  business_type: 1
+  idCard: '',
+  businessType: 1
 });
 
 const goBack = () => router.back();
@@ -107,18 +107,18 @@ const openAdd = () => {
   editingId.value = null;
   form.username = '';
   form.phone = '';
-  form.id_card = '';
-  form.business_type = 1;
+  form.idCard = '';
+  form.businessType = 1;
   errorMessage.value = '';
   dialogVisible.value = true;
 };
 
 const openEdit = (item: FarmerVO) => {
-  editingId.value = item.user_id;
+  editingId.value = item.userId;
   form.username = item.username;
   form.phone = item.phone;
-  form.business_type = item.business_type;
-  form.id_card = '';
+  form.businessType = item.businessType;
+  form.idCard = '';
   errorMessage.value = '';
   dialogVisible.value = true;
 };
@@ -145,8 +145,8 @@ const submit = async () => {
     const payload = {
       username: form.username,
       phone: form.phone,
-      id_card: form.id_card,
-      business_type: form.business_type
+      idCard: form.idCard,
+      businessType: form.businessType
     };
     if (editingId.value) {
       await updateVillageFarmer(editingId.value, payload);
@@ -171,7 +171,7 @@ const submit = async () => {
 const removeFarmer = async (item: FarmerVO) => {
   if (!confirm(`确定删除农户「${item.username}」？其账号将降为游客`)) return;
   try {
-    await deleteVillageFarmer(item.user_id);
+    await deleteVillageFarmer(item.userId);
     ElMessage.success('删除成功');
     fetchFarmers();
   } catch (e: any) {

@@ -1,0 +1,137 @@
+/**
+ * 深色主题：内容区容器毛玻璃 + 浅色文字
+ * 挂在 .common-layout.is-dark 下，再点灯光按钮移除该类即恢复
+ */
+
+.common-layout.is-dark .layout-main {
+  color: #e8e8ea;
+}
+
+/* —— 毛玻璃容器 —— */
+.common-layout.is-dark .layout-main .card,
+.common-layout.is-dark .layout-main [class*='card'],
+.common-layout.is-dark .layout-main .like-item,
+.common-layout.is-dark .layout-main .collection-item,
+.common-layout.is-dark .layout-main .comment-item,
+.common-layout.is-dark .layout-main .scenic-item,
+.common-layout.is-dark .layout-main .farmer-item,
+.common-layout.is-dark .layout-main .carousel-item,
+.common-layout.is-dark .layout-main .search-bar,
+.common-layout.is-dark .layout-main .village-tabs,
+.common-layout.is-dark .layout-main .village-row,
+.common-layout.is-dark .layout-main .about-section,
+.common-layout.is-dark .layout-main .scenic-info,
+.common-layout.is-dark .layout-main .comment-section,
+.common-layout.is-dark .layout-main .form-container,
+.common-layout.is-dark .layout-main .profile-form,
+.common-layout.is-dark .layout-main .avatar-section,
+.common-layout.is-dark .layout-main .scenic-header,
+.common-layout.is-dark .layout-main .edit-profile-header,
+.common-layout.is-dark .layout-main .dialog,
+.common-layout.is-dark .layout-main .loading-container,
+.common-layout.is-dark .layout-main .error-container,
+.common-layout.is-dark .layout-main .empty-container,
+.common-layout.is-dark .layout-main .el-card,
+.common-layout.is-dark .layout-main .el-dialog,
+.common-layout.is-dark .layout-main .el-table,
+.common-layout.is-dark .layout-main .el-form {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 图片 / 视频区域不套毛玻璃 */
+.common-layout.is-dark .layout-main img,
+.common-layout.is-dark .layout-main video,
+.common-layout.is-dark .layout-main .item-image,
+.common-layout.is-dark .layout-main .village-image,
+.common-layout.is-dark .layout-main .scenic-image {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Element Plus 输入控件 */
+.common-layout.is-dark .layout-main .el-input__wrapper,
+.common-layout.is-dark .layout-main .el-textarea__inner,
+.common-layout.is-dark .layout-main .el-select__wrapper {
+  background: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14) inset !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.common-layout.is-dark .layout-main .el-input__inner,
+.common-layout.is-dark .layout-main .el-textarea__inner,
+.common-layout.is-dark .layout-main .el-select__placeholder,
+.common-layout.is-dark .layout-main .el-select__selected-item {
+  color: #e8e8ea !important;
+}
+
+.common-layout.is-dark .layout-main .el-table,
+.common-layout.is-dark .layout-main .el-table tr,
+.common-layout.is-dark .layout-main .el-table th.el-table__cell,
+.common-layout.is-dark .layout-main .el-table td.el-table__cell {
+  background: transparent !important;
+  color: #e8e8ea !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.common-layout.is-dark .layout-main .el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* —— 深色字 → 浅色 —— */
+.common-layout.is-dark .layout-main :is(
+  h1, h2, h3, h4, h5, h6,
+  p, span, label, li, td, th,
+  div, a, strong, em, small, b,
+  input, textarea
+) {
+  color: #e8e8ea !important;
+}
+
+.common-layout.is-dark .layout-main input::placeholder,
+.common-layout.is-dark .layout-main textarea::placeholder {
+  color: rgba(232, 232, 234, 0.45) !important;
+}
+
+.common-layout.is-dark .layout-main input:not([type='checkbox']):not([type='radio']),
+.common-layout.is-dark .layout-main textarea,
+.common-layout.is-dark .layout-main .search-input,
+.common-layout.is-dark .layout-main .input,
+.common-layout.is-dark .layout-main .form-input {
+  background: transparent !important;
+  color: #e8e8ea !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* 品牌绿标题略提亮，保证深色底可读 */
+.common-layout.is-dark .layout-main .section-title {
+  color: #aed581 !important;
+}
+
+/* 按钮文字保持白色 */
+.common-layout.is-dark .layout-main :is(button, .btn, .btn-primary, .search-btn, .carousel-btn, .save-btn) {
+  color: #fff !important;
+}
+
+.common-layout.is-dark .layout-main .comment-textarea,
+.common-layout.is-dark .layout-main .reply-composer {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #e8e8ea !important;
+}
+
+.common-layout.is-dark .layout-main .comment-user,
+.common-layout.is-dark .layout-main .comment-time,
+.common-layout.is-dark .layout-main .reply-btn,
+.common-layout.is-dark .layout-main .action-placeholder,
+.common-layout.is-dark .layout-main .comment-count,
+.common-layout.is-dark .layout-main .no-comments {
+  color: #b0b3b8 !important;
+}

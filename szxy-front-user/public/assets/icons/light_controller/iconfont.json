@@ -1,0 +1,16 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "6879500",
+      "name": "灯光",
+      "font_class": "dengguang",
+      "unicode": "e60f",
+      "unicode_decimal": 58895
+    }
+  ]
+}

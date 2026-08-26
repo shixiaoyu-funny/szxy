@@ -1,10 +1,11 @@
 @font-face {
-  font-family: "iconfont"; /* Project id  */
+  font-family: "iconfont-fire";
   src: url('iconfont.ttf?t=1774943460554') format('truetype');
 }
 
-.iconfont {
-  font-family: "iconfont" !important;
+.iconfont,
+.iconfont-fire {
+  font-family: "iconfont-fire" !important;
   font-size: 16px;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -14,4 +15,3 @@
 .icon-huo:before {
   content: "\e66c";
 }
-

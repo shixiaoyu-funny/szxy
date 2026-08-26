@@ -1,11 +1,11 @@
 <template>
   <div class="scenic-detail-container">
-    <div v-if="loading" class="loading-container">
-      <div class="loading"></div>
-      <p>加载中...</p>
+    <PageLoadingOverlay :visible="!pageReady" />
+    <div v-if="pageReady && loadError && !scenicInfo" class="load-error">
+      <p>{{ loadError }}</p>
+      <button type="button" class="btn btn-primary" @click="fetchScenicDetail">重试</button>
     </div>
-
-    <div v-else-if="scenicInfo" class="scenic-content">
+    <div v-if="pageReady && scenicInfo" class="scenic-content">
       <!-- 景点图片 -->
       <div class="scenic-image">
         <img :src="getMainImage(scenicInfo.image)" :alt="scenicInfo.name" />
@@ -15,16 +15,18 @@
       <div class="scenic-info">
         <h2 class="scenic-name">{{ scenicInfo.name }}</h2>
         <div class="scenic-meta">
-          <span class="meta-item">📍 {{ scenicInfo.village_name }}</span>
-          <span class="meta-item">🎫 {{ scenicInfo.price === 0 ? '免费' : '¥' + scenicInfo.price }}</span>
+          <span class="meta-item">📍 {{ scenicInfo.villageName }}</span>
+          <span v-if="hasScenicPrice(scenicInfo.price)" class="meta-item">
+            🎫 {{ formatScenicPrice(scenicInfo.price) }}
+          </span>
           <span class="meta-item">🏷️ {{ getScenicType(scenicInfo.type) }}</span>
         </div>
         <p class="scenic-desc">{{ scenicInfo.intro }}</p>
 
         <!-- 住宿信息 -->
-        <div v-if="scenicInfo.has_accommodation === 1 && scenicInfo.accommodation_info" class="accommodation-info">
+        <div v-if="scenicInfo.hasAccommodation === 1 && scenicInfo.accommodationInfo" class="accommodation-info">
           <h3 class="info-title">住宿信息</h3>
-          <p class="accommodation-text">{{ scenicInfo.accommodation_info }}</p>
+          <p class="accommodation-text">{{ scenicInfo.accommodationInfo }}</p>
         </div>
 
         <!-- 操作按钮：新增disabled防重复点击 -->
@@ -44,52 +46,41 @@
         </div>
       </div>
 
-      <!-- 评论区：上方为评论热词 TOP10（原生进度条） -->
+      <!-- 评论区 -->
       <div class="comment-section">
-        <h3 class="section-title">评论</h3>
-
-        <div v-if="comments.length > 0" class="comment-rank-section">
-          <h4 class="comment-rank-heading">评论热词 TOP10</h4>
-          <ul
-            v-if="hasCommentRank"
-            class="comment-rank-list"
-            :style="{ fontFamily: WORD_CLOUD_FONT_FAMILY }"
-          >
-            <li v-for="(row, index) in commentRankRows" :key="row.name" class="comment-rank-item">
-              <span class="comment-rank-badge">{{ index + 1 }}</span>
-              <span class="comment-rank-name" :title="row.name">{{ row.name }}</span>
-              <div class="comment-rank-track" aria-hidden="true">
-                <div class="comment-rank-fill" :style="commentRankBarStyle(row)" />
-              </div>
-              <div class="comment-rank-count">
-                <span class="comment-rank-count-num">{{ row.value }}</span>
-                <span class="comment-rank-count-unit">次</span>
-              </div>
-            </li>
-          </ul>
-          <p v-show="!hasCommentRank" class="comment-rank-hint">
-            暂无足够有效词语生成排行，试试写更具体的游玩感受吧～
-          </p>
-        </div>
+        <h3 class="section-title">评论 <span v-if="commentTotal > 0" class="comment-count">{{ commentTotal }}</span></h3>
 
         <div class="comment-input-container">
           <div class="rating-container">
             <span class="rating-label">评分：</span>
             <div class="stars">
-              <span v-for="star in 5" :key="star" class="star" :class="{ active: selectedRating >= star }"
-                @click="selectedRating = star">
-                ★
-              </span>
+              <span
+                v-for="star in 5"
+                :key="'root-' + star"
+                class="star"
+                :class="{ active: selectedRating >= star }"
+                @click="selectedRating = star"
+              >★</span>
             </div>
           </div>
-          <input type="text" v-model="commentContent" class="input" placeholder="写下您的评论..." @keyup.enter="submitComment"
-            :disabled="submitting" />
+          <textarea
+            v-model="commentContent"
+            class="comment-textarea"
+            rows="3"
+            placeholder="写下您的评论..."
+            :disabled="submitting"
+          />
           <div class="image-upload">
-            <input type="file" multiple accept="image/*" class="file-input" id="image-upload"
-              @change.prevent="handleImageUpload" :disabled="submitting" />
-            <label class="upload-btn" for="image-upload">
-              📷 上传图片（图片大小≤5M）
-            </label>
+            <input
+              id="image-upload"
+              type="file"
+              multiple
+              accept="image/*"
+              class="file-input"
+              :disabled="submitting"
+              @change.prevent="handleImageUpload"
+            />
+            <label class="upload-btn" for="image-upload">📷 上传图片（≤5M）</label>
             <div v-if="commentPreviewUrls.length > 0" class="comment-preview-wrapper">
               <div class="preview-list">
                 <div v-for="(url, index) in commentPreviewUrls" :key="index" class="preview-item">
@@ -99,32 +90,151 @@
               </div>
             </div>
           </div>
-          <button type="button" class="btn btn-primary submit-btn" @click="submitComment"
-            :disabled="!commentContent.trim() || submitting || selectedRating === 0">
+          <button
+            type="button"
+            class="btn btn-primary submit-btn"
+            :disabled="!commentContent.trim() || submitting || selectedRating === 0"
+            @click="submitComment"
+          >
             {{ submitting ? '发布中...' : '发布' }}
           </button>
         </div>
+
         <div class="comment-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-item">
-            <div class="comment-content">
-              <div class="comment-header">
-                <div class="comment-user">用户：{{ comment.username || '匿名用户' }}</div>
+          <div v-if="comments.length === 0" class="no-comments">暂无评论，快来发表第一条评论吧！</div>
+
+          <div v-for="comment in comments" :key="comment.id" class="comment-thread">
+            <div class="comment-row">
+              <img
+                class="comment-avatar"
+                :src="avatarOf(comment)"
+                alt=""
+                @error="onAvatarError"
+              />
+              <div class="comment-main">
+                <div class="comment-user">{{ comment.username || '匿名用户' }}</div>
+                <p class="comment-text">{{ comment.content }}</p>
+                <div v-if="comment.commentImg" class="comment-images">
+                  <img
+                    v-for="(img, index) in splitImgs(comment.commentImg)"
+                    :key="index"
+                    :src="img"
+                    alt="评论图片"
+                    class="comment-image"
+                    @error="handleImgError"
+                  />
+                </div>
+                <div v-if="comment.score" class="comment-rating">
+                  <span
+                    v-for="star in 5"
+                    :key="'s-' + comment.id + '-' + star"
+                    class="star"
+                    :class="{ active: comment.score >= star }"
+                  >★</span>
+                </div>
+                <div class="comment-actions">
+                  <span class="comment-time">{{ formatCommentTime(comment.createTime) }}</span>
+                  <button type="button" class="action-placeholder" title="占位">👍</button>
+                  <button type="button" class="action-placeholder" title="占位">👎</button>
+                  <button type="button" class="reply-btn" @click="toggleReplyBox(comment)">回复</button>
+                </div>
+
+                <div v-if="replyingToId === comment.id" class="reply-composer">
+                  <div class="rating-container compact">
+                    <span class="rating-label">评分：</span>
+                    <div class="stars">
+                      <span
+                        v-for="star in 5"
+                        :key="'r-' + star"
+                        class="star"
+                        :class="{ active: replyRating >= star }"
+                        @click="replyRating = star"
+                      >★</span>
+                    </div>
+                  </div>
+                  <textarea
+                    v-model="replyContent"
+                    class="comment-textarea compact"
+                    rows="2"
+                    :placeholder="`回复 @${comment.username || '用户'}（不可附带图片）`"
+                    :disabled="replySubmitting"
+                  />
+                  <div class="reply-composer-actions">
+                    <button type="button" class="btn-cancel" :disabled="replySubmitting" @click="cancelReply">取消</button>
+                    <button
+                      type="button"
+                      class="btn btn-primary submit-btn compact"
+                      :disabled="!replyContent.trim() || replySubmitting || replyRating === 0"
+                      @click="submitReply"
+                    >
+                      {{ replySubmitting ? '发布中...' : '发布回复' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="comment.replies?.length" class="reply-list">
+                  <div v-for="reply in comment.replies" :key="reply.id" class="comment-row is-reply">
+                    <img
+                      class="comment-avatar sm"
+                      :src="avatarOf(reply)"
+                      alt=""
+                      @error="onAvatarError"
+                    />
+                    <div class="comment-main">
+                      <div class="comment-user">{{ reply.username || '匿名用户' }}</div>
+                      <p class="comment-text">{{ reply.content }}</p>
+                      <div v-if="reply.score" class="comment-rating">
+                        <span
+                          v-for="star in 5"
+                          :key="'rs-' + reply.id + '-' + star"
+                          class="star"
+                          :class="{ active: reply.score >= star }"
+                        >★</span>
+                      </div>
+                      <div class="comment-actions">
+                        <span class="comment-time">{{ formatCommentTime(reply.createTime) }}</span>
+                        <button type="button" class="action-placeholder" title="占位">👍</button>
+                        <button type="button" class="action-placeholder" title="占位">👎</button>
+                        <button type="button" class="reply-btn" @click="toggleReplyBox(reply)">回复</button>
+                      </div>
+
+                      <div v-if="replyingToId === reply.id" class="reply-composer">
+                        <div class="rating-container compact">
+                          <span class="rating-label">评分：</span>
+                          <div class="stars">
+                            <span
+                              v-for="star in 5"
+                              :key="'rr-' + star"
+                              class="star"
+                              :class="{ active: replyRating >= star }"
+                              @click="replyRating = star"
+                            >★</span>
+                          </div>
+                        </div>
+                        <textarea
+                          v-model="replyContent"
+                          class="comment-textarea compact"
+                          rows="2"
+                          :placeholder="`回复 @${reply.username || '用户'}（不可附带图片）`"
+                          :disabled="replySubmitting"
+                        />
+                        <div class="reply-composer-actions">
+                          <button type="button" class="btn-cancel" :disabled="replySubmitting" @click="cancelReply">取消</button>
+                          <button
+                            type="button"
+                            class="btn btn-primary submit-btn compact"
+                            :disabled="!replyContent.trim() || replySubmitting || replyRating === 0"
+                            @click="submitReply"
+                          >
+                            {{ replySubmitting ? '发布中...' : '发布回复' }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p class="comment-text">{{ comment.content }}</p>
-              <div v-if="comment.comment_img" class="comment-images">
-                <img v-for="(img, index) in comment.comment_img.split(',')" :key="index" :src="img"
-                  alt="评论图片" class="comment-image" />
-              </div>
-              <div v-if="comment.score" class="comment-rating">
-                <span v-for="star in 5" :key="star" class="star" :class="{ active: comment.score >= star }">
-                  ★
-                </span>
-              </div>
-              <div class="comment-time">评论时间：{{ comment.create_time || '未知时间' }}</div>
             </div>
-          </div>
-          <div v-if="comments.length === 0" class="no-comments">
-            暂无评论，快来发表第一条评论吧！
           </div>
         </div>
       </div>
@@ -133,20 +243,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
 import { userLike, userCollect, userComment, isLike, isCollect } from '../api/user';
 import { getScenicDetail, getScComments } from '../api/scenic';
 import { uploadFile } from '../api/upload';
-import {
-  type CommentRankRow,
-  WORD_CLOUD_FONT_FAMILY,
-  commentRankBarPercent,
-  getCommentRankRows,
-  wordColorByName
-} from '../utils/commentWordCloud';
+import PageLoadingOverlay from '../components/PageLoadingOverlay.vue';
+import { getErrorMessage } from '../api/axios';
+import { collectImageUrls, collectImageUrlsFromItems, preloadImages } from '../utils/preloadImages';
+import { formatScenicPrice, hasScenicPrice } from '../utils/scenicPrice';
+
+const DEFAULT_AVATAR =
+  'https://shixiaoyu-funny.oss-cn-beijing.aliyuncs.com/%E6%95%B0%E6%99%BA%E4%B9%A1%E7%BA%A6%E6%B3%A8%E5%86%8C%E5%A4%B4%E5%83%8F%E8%AE%BE%E8%AE%A1.png';
+const DEFAULT_SCENIC_COVER = DEFAULT_AVATAR;
 
 const router = useRouter();
 const route = useRoute();
@@ -158,47 +269,105 @@ const commentContent = ref('');
 const selectedRating = ref(0);
 const selectedImages = ref<File[]>([]);
 const commentPreviewUrls = ref<string[]>([]);
-// 核心状态：严格同步服务端0/1
 const isLiked = ref(false);
 const isCollected = ref(false);
-// 提交/操作loading
 const submitting = ref(false);
-const loading = ref(true);
-// 🔥 新增：点赞/收藏防重复点击loading
+const pageReady = ref(false);
+const loadError = ref('');
 const likeLoading = ref(false);
 const collectLoading = ref(false);
 
-const commentRankRows = computed(() => getCommentRankRows(comments.value));
-const commentRankMax = computed(() => commentRankRows.value[0]?.value ?? 1);
-const hasCommentRank = computed(() => commentRankRows.value.length > 0);
+const replyingToId = ref<number | null>(null);
+const replyContent = ref('');
+const replyRating = ref(0);
+const replySubmitting = ref(false);
 
-function commentRankBarStyle(row: CommentRankRow) {
-  const pct = commentRankBarPercent(row.value, commentRankMax.value);
-  return {
-    width: `${pct}%`,
-    backgroundColor: wordColorByName(row.name)
-  };
-}
+const commentTotal = computed(() => {
+  return comments.value.reduce((n, c) => n + 1 + (c.replies?.length || 0), 0);
+});
+
+const avatarOf = (c: any) => c?.avatar || DEFAULT_AVATAR;
+const onAvatarError = (e: Event) => {
+  (e.target as HTMLImageElement).src = DEFAULT_AVATAR;
+};
+const splitImgs = (s: string) => (s || '').split(',').map((x) => x.trim()).filter(Boolean);
+
+const flattenComments = (list: any[]) => {
+  if (!Array.isArray(list)) return [];
+  const flat: any[] = [];
+  for (const c of list) {
+    flat.push(c);
+    if (c.replies?.length) flat.push(...c.replies);
+  }
+  return flat;
+};
+
+const formatCommentTime = (t: string | Date | null | undefined) => {
+  if (!t) return '未知时间';
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return String(t);
+  const diff = Date.now() - d.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return `${m}分钟前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}小时前`;
+  const day = Math.floor(h / 24);
+  if (day < 7) return `${day}天前`;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const toggleReplyBox = (comment: any) => {
+  if (replyingToId.value === comment.id) {
+    cancelReply();
+    return;
+  }
+  replyingToId.value = comment.id;
+  replyContent.value = '';
+  replyRating.value = 0;
+};
+
+const cancelReply = () => {
+  replyingToId.value = null;
+  replyContent.value = '';
+  replyRating.value = 0;
+};
 
 const goBack = () => {
   router.back();
 };
 
 const fetchScenicDetail = async () => {
-  loading.value = true;
+  pageReady.value = false;
+  loadError.value = '';
+  scenicInfo.value = null;
+  if (!Number.isFinite(scenicId.value)) {
+    loadError.value = '无效的景点 ID';
+    pageReady.value = true;
+    return;
+  }
   try {
     const res = await getScenicDetail(scenicId.value);
     scenicInfo.value = res.data;
-    console.log('景点详情：', scenicInfo.value);
-    // 🔥 强制等待：先拿景点详情，再同步点赞/收藏真实状态
+    if (!scenicInfo.value) {
+      throw new Error('');
+    }
     await fetchUserStatus();
-    // 获取景点评论
     await fetchComments();
+    pageReady.value = true;
+    const urls = [
+      ...collectImageUrls(scenicInfo.value?.image),
+      ...collectImageUrlsFromItems(flattenComments(comments.value)),
+    ];
+    void preloadImages(urls);
   } catch (err) {
-    ElMessage.error('获取景点详情失败，请重试');
-    console.error('获取景点详情失败:', err);
-  } finally {
-    loading.value = false;
+    scenicInfo.value = null;
+    loadError.value = getErrorMessage(err);
+    if (loadError.value) {
+      ElMessage.error(loadError.value);
+    }
+    pageReady.value = true;
   }
 };
 
@@ -277,8 +446,8 @@ const toggleCollect = async () => {
 };
 
 const getMainImage = (imageStr: string) => {
-  if (!imageStr) return 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=default%20scenic%20spot&image_size=landscape_16_9';
-  return imageStr.split(',')[0] || '';
+  if (!imageStr) return DEFAULT_SCENIC_COVER;
+  return imageStr.split(',')[0] || DEFAULT_SCENIC_COVER;
 };
 
 const getScenicType = (type: number) => {
@@ -317,32 +486,19 @@ const submitComment = async () => {
   try {
     let commentImg = '';
     if (selectedImages.value.length > 0) {
-      const uploadPromises = selectedImages.value.map(file => uploadFile(file));
+      const uploadPromises = selectedImages.value.map((file) => uploadFile(file));
       const uploadResults = await Promise.all(uploadPromises);
-      const imgUrls = uploadResults.map(res => {
+      const imgUrls = uploadResults.map((res) => {
         return typeof res === 'string' ? res : (res as any).url || (res as any).data || '';
       });
       commentImg = imgUrls.join(',');
     }
 
-    const commentData = {
-      scenic_id: scenicId.value,
+    await userComment({
+      scenicId: scenicId.value,
       content: commentContent.value,
       score: selectedRating.value,
-      comment_img: commentImg
-    };
-
-    const response = await userComment(commentData);
-    const username = response.data || userStore.userInfo?.username || '用户';
-
-    comments.value.unshift({
-      id: Date.now(),
-      username,
-      content: commentContent.value,
-      score: selectedRating.value,
-      comment_img: commentData.comment_img, // ✅ 与后端 SNAKE_CASE 一致
-      create_time: new Date().toLocaleString('zh-CN'),
-      isShow: 1
+      commentImg: commentImg || undefined
     });
 
     commentContent.value = '';
@@ -353,6 +509,7 @@ const submitComment = async () => {
     selectedImages.value = [];
     commentPreviewUrls.value = [];
 
+    await fetchComments();
     ElMessage.success('评论发布成功！');
   } catch (error: any) {
     console.error('评论失败:', error);
@@ -362,17 +519,46 @@ const submitComment = async () => {
   }
 };
 
+const submitReply = async () => {
+  if (!replyingToId.value || !replyContent.value.trim() || replyRating.value === 0) return;
+  replySubmitting.value = true;
+  try {
+    await userComment({
+      scenicId: scenicId.value,
+      parentId: replyingToId.value,
+      content: replyContent.value,
+      score: replyRating.value
+    });
+    cancelReply();
+    await fetchComments();
+    ElMessage.success('回复成功！');
+  } catch (error: any) {
+    console.error('回复失败:', error);
+    ElMessage.error(error?.message || error?.response?.data?.message || '回复失败，请重试');
+  } finally {
+    replySubmitting.value = false;
+  }
+};
+
 onUnmounted(() => {
-  commentPreviewUrls.value.forEach(url => URL.revokeObjectURL(url));
+  commentPreviewUrls.value.forEach((url) => URL.revokeObjectURL(url));
 });
+
+watch(
+  () => route.params.id,
+  (id) => {
+    scenicId.value = Number(id);
+    if (userStore.isLoggedIn) {
+      fetchScenicDetail();
+    }
+  },
+  { immediate: true }
+);
 
 onMounted(() => {
   if (!userStore.isLoggedIn) {
     router.push('/login');
-    return;
   }
-  // 刷新页面→自动加载详情+同步点赞收藏状态
-  fetchScenicDetail();
 });
 </script>
 
@@ -381,6 +567,16 @@ onMounted(() => {
 .scenic-detail-container {
   min-height: 100vh;
   background: transparent;
+}
+
+.load-error {
+  padding: 48px 16px;
+  text-align: center;
+  color: #666;
+}
+
+.load-error p {
+  margin-bottom: 16px;
 }
 
 .scenic-header {
@@ -528,175 +724,92 @@ onMounted(() => {
 
 .comment-section {
   background: white;
-  padding: 16px;
+  padding: 16px 20px 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .section-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: #333;
+  color: #18191c;
 }
 
-.comment-rank-section {
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.comment-rank-heading {
+.comment-count {
   font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 10px;
-  color: #2e7d32;
-}
-
-.comment-rank-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.comment-rank-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: linear-gradient(145deg, #f8faf8 0%, #f0f4f1 100%);
-  box-shadow: 0 2px 10px rgba(46, 125, 50, 0.06);
-  border: 1px solid rgba(46, 125, 50, 0.08);
-}
-
-.comment-rank-badge {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: #2e7d32;
-  background: rgba(139, 195, 74, 0.22);
-}
-
-.comment-rank-name {
-  flex: 0 1 26%;
-  min-width: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: #2d3e35;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.comment-rank-track {
-  flex: 1;
-  min-width: 0;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.comment-rank-fill {
-  height: 100%;
-  border-radius: 999px;
-  min-width: 4px;
-  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-}
-
-.comment-rank-count {
-  flex-shrink: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-  min-width: 3.2em;
-  justify-content: flex-end;
-}
-
-.comment-rank-count-num {
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: #37474f;
-}
-
-.comment-rank-count-unit {
-  font-size: 11px;
   font-weight: 500;
-  color: #78909c;
-}
-
-@media (max-width: 380px) {
-  .comment-rank-name {
-    flex-basis: 22%;
-    font-size: 12px;
-  }
-
-  .comment-rank-item {
-    padding: 9px 10px;
-    gap: 6px;
-  }
-}
-
-.comment-rank-hint {
-  font-size: 13px;
-  color: #888;
-  margin: 0;
-  line-height: 1.5;
+  color: #9499a0;
+  margin-left: 6px;
 }
 
 .comment-input-container {
   margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e3e5e7;
 }
 
 .rating-container {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.rating-container.compact {
+  margin-bottom: 8px;
 }
 
 .rating-label {
-  font-size: 14px;
-  color: #333;
-  margin-right: 8px;
+  font-size: 13px;
+  color: #61666d;
 }
 
 .stars {
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
 
 .star {
-  font-size: 20px;
-  color: #e0e0e0;
+  font-size: 18px;
+  color: #c9ccd0;
   cursor: pointer;
-  transition: color 0.3s ease;
+  user-select: none;
 }
 
 .star.active {
-  color: #FFC107;
+  color: #f9a825;
+}
+
+.comment-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #e3e5e7;
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  color: #18191c;
+  background: #f1f2f3;
+  outline: none;
+}
+
+.comment-textarea:focus {
+  background: #fff;
+  border-color: #8bc34a;
+}
+
+.comment-textarea.compact {
+  font-size: 13px;
+  background: #f6f7f8;
 }
 
 .image-upload {
+  margin-top: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 12px 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 .file-input {
@@ -704,18 +817,18 @@ onMounted(() => {
 }
 
 .upload-btn {
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #61666d;
+  background: #f1f2f3;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  width: fit-content;
 }
 
 .upload-btn:hover {
-  background: #e0e0e0;
+  background: #e3e5e7;
 }
 
 .comment-preview-wrapper {
@@ -724,15 +837,15 @@ onMounted(() => {
 
 .preview-list {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .preview-item {
   position: relative;
-  width: 60px;
-  height: 60px;
-  border-radius: 4px;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
   overflow: hidden;
 }
 
@@ -744,31 +857,21 @@ onMounted(() => {
 
 .del-preview-btn {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 2px;
+  right: 2px;
   width: 18px;
   height: 18px;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
   border: none;
   border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
   font-size: 12px;
-  line-height: 18px;
-  text-align: center;
+  line-height: 1;
   cursor: pointer;
-  padding: 0;
-}
-
-.comment-input-container input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-bottom: 12px;
 }
 
 .submit-btn {
+  margin-top: 10px;
   white-space: nowrap;
   padding: 0 16px;
   height: 36px;
@@ -779,16 +882,102 @@ onMounted(() => {
   cursor: pointer;
 }
 
+.submit-btn.compact {
+  margin-top: 0;
+  padding: 6px 14px;
+  height: auto;
+  font-size: 13px;
+}
+
 .submit-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
 }
 
+.comment-list {
+  max-height: none;
+}
+
+.no-comments {
+  padding: 32px 0;
+  text-align: center;
+  color: #9499a0;
+  font-size: 14px;
+}
+
+.comment-thread {
+  padding: 14px 0;
+  border-bottom: 1px solid #e3e5e7;
+}
+
+.comment-thread:last-child {
+  border-bottom: none;
+}
+
+.comment-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.comment-row.is-reply {
+  margin-top: 12px;
+  gap: 10px;
+}
+
+.comment-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #e3e5e7;
+}
+
+.comment-avatar.sm {
+  width: 32px;
+  height: 32px;
+}
+
+.comment-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-user {
+  font-size: 13px;
+  font-weight: 500;
+  color: #61666d;
+  margin-bottom: 4px;
+}
+
+.comment-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #18191c;
+  margin: 0 0 6px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.comment-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.comment-image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
 .comment-rating {
   display: flex;
   gap: 2px;
-  margin: 4px 0;
-  margin-left: 280px;
+  margin-bottom: 4px;
 }
 
 .comment-rating .star {
@@ -796,75 +985,78 @@ onMounted(() => {
   cursor: default;
 }
 
-.comment-images {
+.comment-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-
-.comment-content{
-  margin-bottom: 8px;
-  padding: 12px;
-  padding-left: 0;
-  width: 400px;
-  border-radius: 8px;
-  background-color: #93f8a788;
-  border-bottom: 1px solid #a7a7a7;
-}
-
-.comment-image {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-left: 12px;
-}
-
-.comment-time{
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+  color: #9499a0;
   font-size: 12px;
-  color: #666;
-  margin-left: 12px;
 }
 
-.comment-user{
-  width: 50%;
-  font-size: 16px;
-  border-radius: 0 8px 8px 0;
-  background-color: #3cfcffcd;
-  border-bottom: 1px solid #6d6d6d;
-  padding: 4px 8px;
-  margin-right: 8px;
+.comment-time {
+  color: #9499a0;
 }
 
-.comment-text{
-  font-size: 14px;
-  line-height: 1.6;
-  color: #333;
-  margin-left: 12px;
+.action-placeholder,
+.reply-btn {
+  border: none;
+  background: transparent;
+  color: #9499a0;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.reply-btn:hover {
+  color: #8bc34a;
+}
+
+.reply-list {
+  margin-top: 4px;
+}
+
+.reply-composer {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #f6f7f8;
+  border-radius: 6px;
+}
+
+.reply-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-cancel {
+  border: none;
+  background: transparent;
+  color: #61666d;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.btn-cancel:hover {
+  color: #18191c;
 }
 
 @media (max-width: 480px) {
+  .comment-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
   .comment-image {
-    width: 60px;
-    height: 60px;
+    width: 72px;
+    height: 72px;
   }
 
   .preview-item {
     width: 50px;
     height: 50px;
   }
-}
-
-.comment-list {
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.comment-item {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 16px
 }
 </style>

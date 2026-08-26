@@ -3,7 +3,7 @@ import axios from './axios';
 // 分页农村信息（公开）
 export const getVillageList = (pageNo?: number, pageSize?: number) => {
   return axios.get('/vlg/ls', {
-    params: { page_no: pageNo, page_size: pageSize }
+    params: { pageNo, pageSize }
   });
 };
 

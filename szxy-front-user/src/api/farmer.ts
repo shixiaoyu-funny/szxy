@@ -8,7 +8,7 @@ export const getVillageFarmers = () => {
 // 村长新增本村农户
 export const addVillageFarmer = (villageId: number, data: any) => {
   return axios.post('/fmr/new', data, {
-    params: { village_id: villageId }
+    params: { villageId }
   });
 };
 
@@ -42,13 +42,13 @@ export const adminGetAllFarmers = () => {
 // 建档农户（任意村，默认密码 123456）
 export const adminCreateFarmer = (villageId: number, data: any) => {
   return axios.post('/fmr/create', data, {
-    params: { village_id: villageId }
+    params: { villageId }
   });
 };
 
 // 任命/更换村长
 export const adminSetManager = (villageId: number, farmerUserId: number) => {
   return axios.post('/fmr/set-manager', null, {
-    params: { village_id: villageId, farmer_user_id: farmerUserId }
+    params: { villageId, farmerUserId }
   });
 };
