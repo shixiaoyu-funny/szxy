@@ -2,9 +2,11 @@ package com.shixiaoyu.xiangyueproject.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserCommentDTO;
+import com.shixiaoyu.xiangyueproject.entity.dto.UserQueryDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserSetInfoDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
 import com.shixiaoyu.xiangyueproject.entity.result.Result;
+import com.shixiaoyu.xiangyueproject.entity.vo.AdminUserVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.LikeReceivedVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.ScenicVO;
@@ -125,5 +127,13 @@ public class UserController {
     @Operation(summary = "收到的点赞动态（消息页）")
     public Result<List<LikeReceivedVO>> likesReceived() {
         return Result.ok(userService.likesReceived());
+    }
+
+    // ==================== 管理端（Service 层 SecurityUtils.requireAdmin() 校验 role=4） ====================
+
+    @GetMapping("/ls")
+    @Operation(summary = "管理端分页查询用户")
+    public Result<PageResultVO<AdminUserVO>> adminList(UserQueryDTO queryDTO) {
+        return Result.ok(userService.adminList(queryDTO));
     }
 }

@@ -82,9 +82,6 @@
         <el-form-item label="景点图片">
           <ImageUploader v-model="form.image" :disabled="dialogMode === 'view'" />
         </el-form-item>
-        <el-form-item label="门票价格">
-          <el-input-number v-model="form.price" :min="0" style="width: 100%" />
-        </el-form-item>
         <el-form-item label="景点类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择" style="width: 100%">
             <el-option :value="1" label="自然景观" />
@@ -101,6 +98,12 @@
         </el-form-item>
         <el-form-item v-if="form.hasAccommodation === 1" label="住宿详情">
           <el-input v-model="form.accommodationInfo" placeholder="房型/价格/联系方式等" />
+        </el-form-item>
+        <el-form-item label="门票价格(元)">
+          <el-input-number v-model="form.ticketPrice" :min="0" :precision="2" :step="1" style="width: 100%" placeholder="0 表示免费" />
+        </el-form-item>
+        <el-form-item v-if="form.hasAccommodation === 1" label="住宿价格(元)">
+          <el-input-number v-model="form.stayPrice" :min="0" :precision="2" :step="1" style="width: 100%" placeholder="住宿核销单价" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -137,10 +140,11 @@ const form = reactive({
   name: '',
   intro: '',
   image: '',
-  price: 0,
   type: undefined as number | undefined,
   hasAccommodation: 0,
-  accommodationInfo: ''
+  accommodationInfo: '',
+  ticketPrice: 0,
+  stayPrice: undefined as number | undefined
 });
 
 const rules: FormRules = {
@@ -186,10 +190,12 @@ function rowToForm(row: Record<string, unknown>) {
   form.name = String(pickField(row, 'name', 'name') ?? '');
   form.intro = String(pickField(row, 'intro', 'intro') ?? '');
   form.image = String(pickField(row, 'image', 'image') ?? '');
-  form.price = Number(pickField(row, 'price', 'price') ?? 0);
   form.type = (pickField(row, 'type', 'type') as number | undefined) ?? undefined;
   form.hasAccommodation = Number(pickField(row, 'hasAccommodation', 'has_accommodation') ?? 0);
   form.accommodationInfo = String(pickField(row, 'accommodationInfo', 'accommodation_info') ?? '');
+  const price = pickField(row, 'price', 'price');
+  form.ticketPrice = price != null ? Number(price) : 0;
+  form.stayPrice = undefined;
 }
 
 function resetForm() {
@@ -198,10 +204,11 @@ function resetForm() {
   form.name = '';
   form.intro = '';
   form.image = '';
-  form.price = 0;
   form.type = undefined;
   form.hasAccommodation = 0;
   form.accommodationInfo = '';
+  form.ticketPrice = 0;
+  form.stayPrice = undefined;
 }
 
 function openAdd() {
@@ -233,10 +240,11 @@ const submitForm = async () => {
       name: form.name,
       intro: form.intro || undefined,
       image: form.image || undefined,
-      price: form.price || 0,
       type: form.type,
       hasAccommodation: form.hasAccommodation,
-      accommodationInfo: form.accommodationInfo || undefined
+      accommodationInfo: form.accommodationInfo || undefined,
+      ticketPrice: form.ticketPrice ?? 0,
+      stayPrice: form.hasAccommodation === 1 ? (form.stayPrice ?? 0) : undefined
     };
     if (dialogMode.value === 'add') {
       if (form.villageId == null) {

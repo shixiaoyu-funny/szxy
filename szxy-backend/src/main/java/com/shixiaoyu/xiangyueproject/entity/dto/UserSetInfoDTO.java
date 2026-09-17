@@ -28,4 +28,7 @@ public class UserSetInfoDTO {
 
     @Schema(description = "头像URL")
     private String avatar;
+
+    @Schema(description = "是否根据位置变化自动推荐：0关 1开")
+    private Integer openPosAlter;
 }

@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { renderMarkdown } from '../../utils/renderMarkdown';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { MarkdownUI } from '@markdown-ui/vue';
+import '@markdown-ui/vue/widgets.css';
+import { parseCartProductId, renderMarkdownUi } from '../../utils/renderMarkdownUi';
+import { getErrorMessage } from '../../api/axios';
 
 const props = defineProps<{
   role: 'user' | 'assistant';
   content: string;
+  mediaUrls?: string[];
   time?: string;
 }>();
 
+const router = useRouter();
+const buyBusy = ref(false);
+
 const assistantHtml = computed(() =>
-  props.role === 'assistant' ? renderMarkdown(props.content) : ''
+  props.role === 'assistant' ? renderMarkdownUi(props.content) : ''
 );
+
+const images = computed(() => (props.mediaUrls || []).filter(Boolean));
 
 function formatTime(iso?: string): string {
   if (!iso) return '';
@@ -23,13 +34,45 @@ function formatTime(iso?: string): string {
   if (d.toDateString() === yesterday.toDateString()) return `昨天 ${t}`;
   return `${d.getMonth() + 1}月${d.getDate()}日 ${t}`;
 }
+
+const onWidgetEvent = async (event: CustomEvent<{ id: string; value: unknown }>) => {
+  const detail = event?.detail;
+  const productId = parseCartProductId(detail?.id);
+  if (productId == null) return;
+  if (buyBusy.value) return;
+  buyBusy.value = true;
+  try {
+    await router.push({
+      path: '/order/confirm',
+      query: { productId: String(productId), quantity: '1' },
+    });
+  } catch (e) {
+    ElMessage.error(getErrorMessage(e) || '跳转下单失败');
+  } finally {
+    buyBusy.value = false;
+  }
+};
 </script>
 
 <template>
   <div class="msg" :class="role">
     <div class="msg-bubble">
-      <div v-if="role === 'assistant'" class="msg-text markdown-body" v-html="assistantHtml" />
-      <span v-else class="msg-text">{{ content }}</span>
+      <div v-if="images.length" class="msg-images" :class="{ 'is-user': role === 'user' }">
+        <a
+          v-for="(url, i) in images"
+          :key="url + i"
+          :href="url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="msg-image-link"
+        >
+          <img :src="url" alt="聊天图片" loading="lazy" />
+        </a>
+      </div>
+      <div v-if="role === 'assistant'" class="msg-text markdown-body">
+        <MarkdownUI :html="assistantHtml" @widget-event="onWidgetEvent" />
+      </div>
+      <span v-else-if="content" class="msg-text">{{ content }}</span>
       <span v-if="time" class="msg-time">{{ formatTime(time) }}</span>
     </div>
   </div>
@@ -66,6 +109,35 @@ function formatTime(iso?: string): string {
   background: #f5f7fa;
   color: #333;
   border-bottom-left-radius: 4px;
+}
+
+.msg-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.msg-image-link {
+  display: block;
+  width: 120px;
+  max-width: 40vw;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.msg-images:not(.is-user) .msg-image-link {
+  background: #eef2f6;
+}
+
+.msg-image-link img {
+  width: 100%;
+  height: auto;
+  max-height: 180px;
+  object-fit: cover;
+  display: block;
+  vertical-align: middle;
 }
 
 .msg-text {
@@ -184,7 +256,6 @@ function formatTime(iso?: string): string {
   margin: 0.8em 0;
 }
 
-/* Markdown 图片/视频等比缩至原尺寸 25% */
 .markdown-body :deep(img),
 .markdown-body :deep(video),
 .markdown-body :deep(iframe) {
@@ -199,6 +270,41 @@ function formatTime(iso?: string): string {
   zoom: 1;
   display: inline;
   margin: 0;
+}
+
+/* markdown-ui 加购按钮：贴合绿主题，可放在推荐图文旁 */
+.markdown-body :deep(.widget-button-group) {
+  display: inline-flex;
+  margin: 8px 0 4px;
+  vertical-align: middle;
+}
+
+.markdown-body :deep(.widget-button-group > div[role='group']) {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.markdown-body :deep(.widget-button-group button) {
+  border: none;
+  background: linear-gradient(135deg, #8bc34a 0%, #66bb6a 100%);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(139, 195, 74, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.markdown-body :deep(.widget-button-group button:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 195, 74, 0.4);
+}
+
+.markdown-body :deep(.widget-button-group button[aria-pressed='true']) {
+  filter: brightness(0.95);
 }
 
 @keyframes fadeUp {

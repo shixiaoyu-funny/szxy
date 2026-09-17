@@ -6,6 +6,8 @@ import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
+import static com.shixiaoyu.xiangyueproject.common.config.AIConfiguration.logToolInvoked;
+
 /**
  * 禾小智联网搜索工具（博查 Web Search API）。
  */
@@ -26,6 +28,7 @@ public class WebSearchTool {
     )
     public String webSearch(
             @ToolParam(description = "搜索关键词，例如：2026杭州西湖丰收节、某某村近期活动") String query) {
+        logToolInvoked("web_search");
         return bochaWebSearchClient.search(query);
     }
 }

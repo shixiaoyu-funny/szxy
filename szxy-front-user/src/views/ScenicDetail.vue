@@ -44,6 +44,48 @@
             <span class="btn-count">{{ scenicInfo.collections }}</span>
           </button>
         </div>
+
+        <!-- 可售商品：始终展示购买入口；无商品时按钮置灰不可点 -->
+        <div class="product-section">
+          <h3 class="info-title">{{ products.length > 0 ? '可购商品' : '门票' }}</h3>
+          <template v-if="products.length > 0">
+            <div v-for="p in products" :key="p.id" class="product-row">
+              <div class="product-main">
+                <div class="product-name">{{ p.name }}</div>
+                <div class="product-meta">
+                  {{ productTypeText(p.type) }} · 库存 {{ p.stock ?? 0 }}
+                </div>
+                <div class="product-price">{{ formatMoney(p.price) }}</div>
+              </div>
+              <div class="product-actions">
+                <button
+                  v-if="!isVirtualProduct(p.type)"
+                  type="button"
+                  class="buy-btn ghost"
+                  :disabled="buyBusy"
+                  @click="addToCart(p)"
+                >加购</button>
+                <button type="button" class="buy-btn" :disabled="buyBusy" @click="buyNow(p)">下单</button>
+              </div>
+            </div>
+          </template>
+          <div v-else class="product-row">
+            <div class="product-main">
+              <div class="product-name">{{ scenicInfo.name }}门票</div>
+              <div v-if="canBuyTicket" class="product-price">{{ formatScenicPrice(scenicInfo.price) }}</div>
+              <div v-else class="product-meta">暂未上架，无法购买</div>
+            </div>
+            <div class="product-actions">
+              <button
+                type="button"
+                class="buy-btn"
+                :class="{ disabled: !canBuyTicket }"
+                :disabled="!canBuyTicket || buyBusy"
+                @click="buyTicketNow"
+              >下单</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 评论区 -->
@@ -134,8 +176,6 @@
                 </div>
                 <div class="comment-actions">
                   <span class="comment-time">{{ formatCommentTime(comment.createTime) }}</span>
-                  <button type="button" class="action-placeholder" title="占位">👍</button>
-                  <button type="button" class="action-placeholder" title="占位">👎</button>
                   <button type="button" class="reply-btn" @click="toggleReplyBox(comment)">回复</button>
                 </div>
 
@@ -193,8 +233,6 @@
                       </div>
                       <div class="comment-actions">
                         <span class="comment-time">{{ formatCommentTime(reply.createTime) }}</span>
-                        <button type="button" class="action-placeholder" title="占位">👍</button>
-                        <button type="button" class="action-placeholder" title="占位">👎</button>
                         <button type="button" class="reply-btn" @click="toggleReplyBox(reply)">回复</button>
                       </div>
 
@@ -243,17 +281,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../stores/user';
 import { userLike, userCollect, userComment, isLike, isCollect } from '../api/user';
 import { getScenicDetail, getScComments } from '../api/scenic';
 import { uploadFile } from '../api/upload';
+import { listProductsByScenic } from '../api/product';
+import { addCart } from '../api/cart';
 import PageLoadingOverlay from '../components/PageLoadingOverlay.vue';
 import { getErrorMessage } from '../api/axios';
 import { collectImageUrls, collectImageUrlsFromItems, preloadImages } from '../utils/preloadImages';
 import { formatScenicPrice, hasScenicPrice } from '../utils/scenicPrice';
+import { PRODUCT_TYPE_TEXT, formatMoney } from '../utils/order';
 
 const DEFAULT_AVATAR =
   'https://shixiaoyu-funny.oss-cn-beijing.aliyuncs.com/%E6%95%B0%E6%99%BA%E4%B9%A1%E7%BA%A6%E6%B3%A8%E5%86%8C%E5%A4%B4%E5%83%8F%E8%AE%BE%E8%AE%A1.png';
@@ -264,6 +305,8 @@ const route = useRoute();
 const userStore = useUserStore();
 const scenicId = ref(Number(route.params.id));
 const scenicInfo = ref<any>(null);
+const products = ref<any[]>([]);
+const buyBusy = ref(false);
 const comments = ref<any[]>([]);
 const commentContent = ref('');
 const selectedRating = ref(0);
@@ -338,6 +381,56 @@ const goBack = () => {
   router.back();
 };
 
+const productTypeText = (type: number) => PRODUCT_TYPE_TEXT[type] || '商品';
+
+/** 门票/住宿核销为虚拟商品，不可加购 */
+const isVirtualProduct = (type: number | undefined | null) => type === 2 || type === 3;
+
+/** 无商品列表时，是否仍可通过详情里的 ticketProductId 购买门票 */
+const canBuyTicket = computed(() => !!scenicInfo.value?.ticketProductId);
+
+const ensureLogin = () => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录');
+    router.push('/login');
+    return false;
+  }
+  return true;
+};
+
+const fetchProducts = async () => {
+  try {
+    const res = await listProductsByScenic(scenicId.value);
+    products.value = res.data || [];
+  } catch {
+    products.value = [];
+  }
+};
+
+const addToCart = async (p: { id: number }) => {
+  if (!ensureLogin()) return;
+  buyBusy.value = true;
+  try {
+    await addCart({ productId: p.id, quantity: 1 });
+    ElMessage.success('已加入购物车');
+  } catch (e) {
+    ElMessage.error(getErrorMessage(e) || '加购失败');
+  } finally {
+    buyBusy.value = false;
+  }
+};
+
+const buyNow = (p: { id: number }) => {
+  if (!ensureLogin()) return;
+  router.push({ path: '/order/confirm', query: { productId: String(p.id), quantity: '1' } });
+};
+
+const buyTicketNow = () => {
+  const id = scenicInfo.value?.ticketProductId;
+  if (!id) return;
+  buyNow({ id });
+};
+
 const fetchScenicDetail = async () => {
   pageReady.value = false;
   loadError.value = '';
@@ -355,6 +448,7 @@ const fetchScenicDetail = async () => {
     }
     await fetchUserStatus();
     await fetchComments();
+    await fetchProducts();
     pageReady.value = true;
     const urls = [
       ...collectImageUrls(scenicInfo.value?.image),
@@ -375,7 +469,6 @@ const fetchScenicDetail = async () => {
 const fetchComments = async () => {
   try {
     const res = await getScComments(scenicId.value);
-    console.log('评论接口返回：', res);
     comments.value = res.data || [];
   } catch (err) {
     console.error('获取评论失败:', err);
@@ -383,8 +476,13 @@ const fetchComments = async () => {
   }
 };
 
-// 🔥 修复：强同步服务端点赞/收藏状态（刷新页面必执行）
+// 强同步服务端点赞/收藏状态（仅登录用户；游客跳过，避免 401 被踢）
 const fetchUserStatus = async () => {
+  if (!userStore.isLoggedIn) {
+    isLiked.value = false;
+    isCollected.value = false;
+    return;
+  }
   try {
     // 并行请求，提升速度
     const [likeRes, collectRes] = await Promise.all([
@@ -394,18 +492,18 @@ const fetchUserStatus = async () => {
     // 严格按照服务端返回：0=未操作，1=已操作
     isLiked.value = likeRes.data === true;
     isCollected.value = collectRes.data === true;
-    console.log('✅ 服务端同步状态：', '点赞=', isLiked.value, '收藏=', isCollected.value);
   } catch (err) {
-    console.error('❌ 获取用户状态失败:', err);
+    console.error('获取用户状态失败:', err);
     // 失败时清空状态，避免错误显示
     isLiked.value = false;
     isCollected.value = false;
   }
 };
 
-// 🔥 修复：点赞逻辑（防重复+先调接口再更新状态）
+// 修复：点赞逻辑（防重复+先调接口再更新状态）
 const toggleLike = async () => {
   if (likeLoading.value) return; // 防重复点击
+  if (!ensureLogin()) return;
   likeLoading.value = true;
 
   try {
@@ -424,9 +522,10 @@ const toggleLike = async () => {
   }
 };
 
-// 🔥 修复：收藏逻辑（和点赞完全对齐，杜绝数据不一致）
+// 修复：收藏逻辑（和点赞完全对齐，杜绝数据不一致）
 const toggleCollect = async () => {
   if (collectLoading.value) return; // 防重复点击
+  if (!ensureLogin()) return;
   collectLoading.value = true;
 
   try {
@@ -480,6 +579,7 @@ const removePreviewImage = (index: number) => {
 };
 
 const submitComment = async () => {
+  if (!ensureLogin()) return;
   if (!commentContent.value.trim() || selectedRating.value === 0) return;
 
   submitting.value = true;
@@ -520,6 +620,7 @@ const submitComment = async () => {
 };
 
 const submitReply = async () => {
+  if (!ensureLogin()) return;
   if (!replyingToId.value || !replyContent.value.trim() || replyRating.value === 0) return;
   replySubmitting.value = true;
   try {
@@ -548,18 +649,10 @@ watch(
   () => route.params.id,
   (id) => {
     scenicId.value = Number(id);
-    if (userStore.isLoggedIn) {
-      fetchScenicDetail();
-    }
+    fetchScenicDetail();
   },
   { immediate: true }
 );
-
-onMounted(() => {
-  if (!userStore.isLoggedIn) {
-    router.push('/login');
-  }
-});
 </script>
 
 <style scoped>
@@ -679,6 +772,80 @@ onMounted(() => {
 .action-buttons {
   display: flex;
   gap: 12px;
+}
+
+.product-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px dashed #eee;
+}
+
+.product-row:last-child {
+  border-bottom: none;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.product-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #888;
+}
+
+.product-price {
+  margin-top: 6px;
+  color: #e65100;
+  font-weight: 600;
+}
+
+.product-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.buy-btn {
+  border: none;
+  background: #8BC34A;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.buy-btn.ghost {
+  background: #fff;
+  color: #8BC34A;
+  border: 1px solid #8BC34A;
+}
+
+.buy-btn:disabled,
+.buy-btn.disabled {
+  background: #c8c8c8;
+  color: #fff;
+  border-color: #c8c8c8;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.buy-btn.ghost:disabled,
+.buy-btn.ghost.disabled {
+  background: #f5f5f5;
+  color: #9e9e9e;
+  border-color: #d0d0d0;
 }
 
 .action-btn {

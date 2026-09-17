@@ -110,10 +110,12 @@
         </el-form-item>
         <el-form-item label="村落类型" prop="type">
           <el-select v-model="form.type" placeholder="请选择" style="width: 100%">
-            <el-option :value="1" label="古村落" />
-            <el-option :value="2" label="生态村" />
-            <el-option :value="3" label="民俗村" />
-            <el-option :value="4" label="文旅村" />
+            <el-option
+              v-for="opt in VILLAGE_TYPE_OPTIONS"
+              :key="opt.value"
+              :value="opt.value"
+              :label="opt.label"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="村落介绍" prop="intro">
@@ -145,7 +147,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus';
 import { villageApi, farmerApi, positionApi } from '../api';
-import { pick as pickField, villageTypeText } from '../utils/adminFields';
+import { pick as pickField, villageTypeText, VILLAGE_TYPE_OPTIONS } from '../utils/adminFields';
 import { geocodeByRegion } from '../utils/amapGeocode';
 import ImageUploader from '../components/ImageUploader.vue';
 import RegionCascader from '../components/RegionCascader.vue';
@@ -288,12 +290,19 @@ watch(
   }
 );
 
-const fetchChiefs = async () => {
+const fetchChiefs = async (villageId?: number | null) => {
   try {
     const res = await farmerApi.getFarmers();
     const list = (res || []) as Record<string, unknown>[];
     chiefOptions.value = list
-      .filter((r) => roleOf(r) === 3)
+      .filter((r) => {
+        const role = roleOf(r);
+        // 候选 = 本村农户/村长（任命须满足"已在该村建档"）
+        if (role !== 2 && role !== 3) return false;
+        if (villageId == null) return false;
+        const vId = Number(pickField(r, 'villageId', 'village_id'));
+        return vId === villageId;
+      })
       .map((r) => ({
         userId: Number(pickField(r, 'userId', 'user_id')),
         username: String(pickField(r, 'username', 'username') ?? `用户${pickField(r, 'userId', 'user_id')}`)
@@ -374,7 +383,7 @@ async function openDialog(mode: 'add' | 'edit' | 'view', row?: Record<string, un
       lastRegionKey = regionKey(form.province, form.city, form.county);
     }
   }
-  await fetchChiefs();
+  await fetchChiefs(mode === 'add' ? null : Number(row?.id));
   if (form.manageId != null && !chiefOptions.value.some((c) => c.userId === form.manageId)) {
     const name = row ? String(pickField(row, 'managerName', 'manager_name') || `用户${form.manageId}`) : `用户${form.manageId}`;
     chiefOptions.value = [...chiefOptions.value, { userId: form.manageId, username: name }];

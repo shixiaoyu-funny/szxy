@@ -10,10 +10,6 @@
         <textarea v-model="form.intro" class="input textarea" placeholder="请输入景点介绍" rows="4"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">门票价格（元，0免费）</label>
-        <input v-model.number="form.price" class="input" type="number" placeholder="0" />
-      </div>
-      <div class="form-group">
         <label class="form-label">景点类型</label>
         <select v-model="form.type" class="input">
           <option :value="1">自然景观</option>
@@ -32,6 +28,14 @@
       <div class="form-group" v-if="form.hasAccommodation === 1">
         <label class="form-label">住宿详情</label>
         <input v-model="form.accommodationInfo" class="input" placeholder="房型/价格/联系方式等" />
+      </div>
+      <div class="form-group" v-if="form.hasAccommodation === 1">
+        <label class="form-label">住宿核销价（元）</label>
+        <input v-model.number="form.stayPrice" type="number" min="0" step="1" class="input" placeholder="不填则暂不创建住宿商品" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">门票价格（元）</label>
+        <input v-model.number="form.ticketPrice" type="number" min="0" step="1" class="input" placeholder="0 表示免费票，仍可下单核销" />
       </div>
       <div class="form-group">
         <label class="form-label">图片URL</label>
@@ -62,10 +66,11 @@ const villageId = ref<number | null>(null);
 const form = reactive({
   name: '',
   intro: '',
-  price: 0,
   type: 1,
   hasAccommodation: 0,
   accommodationInfo: '',
+  ticketPrice: 0 as number,
+  stayPrice: null as number | null,
   image: ''
 });
 
@@ -99,10 +104,11 @@ const submit = async () => {
       villageId: villageId.value,
       name: form.name,
       intro: form.intro,
-      price: form.price || 0,
       type: form.type,
       hasAccommodation: form.hasAccommodation,
       accommodationInfo: form.accommodationInfo,
+      ticketPrice: form.ticketPrice ?? 0,
+      stayPrice: form.hasAccommodation === 1 && form.stayPrice != null ? form.stayPrice : undefined,
       image: form.image
     });
     ElMessage.success('景点新增成功');

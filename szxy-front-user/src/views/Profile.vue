@@ -72,6 +72,34 @@ const defaultAvatar = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?
 
 const activityEntries = [
   {
+    title: '我的订单',
+    desc: '查看与管理订单',
+    path: '/orders',
+    icon: '📦',
+    iconClass: 'icon-collect'
+  },
+  {
+    title: '购物车',
+    desc: '结算已加购商品',
+    path: '/cart',
+    icon: '🛒',
+    iconClass: 'icon-like'
+  },
+  {
+    title: '我的钱包',
+    desc: '余额充值与流水',
+    path: '/wallet',
+    icon: '💰',
+    iconClass: 'icon-comment'
+  },
+  {
+    title: '收货地址',
+    desc: '管理收货地址',
+    path: '/address',
+    icon: '📍',
+    iconClass: 'icon-collect'
+  },
+  {
     title: '我的收藏',
     desc: '查看收藏的景点',
     path: '/my-collections',
@@ -382,19 +410,16 @@ onMounted(() => {
 }
 
 .activity-row {
-  display: flex;
-  justify-content: space-evenly;
-  align-items: stretch;
-  gap: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
   margin-top: 36px;
   padding-top: 28px;
   border-top: 1px solid #eef4e6;
 }
 
 .activity-card {
-  flex: 1 1 0;
   min-width: 0;
-  max-width: 280px;
   min-height: 132px;
   display: flex;
   flex-direction: column;

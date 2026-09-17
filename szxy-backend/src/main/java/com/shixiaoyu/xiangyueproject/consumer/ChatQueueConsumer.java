@@ -1,5 +1,6 @@
 package com.shixiaoyu.xiangyueproject.consumer;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -11,11 +12,17 @@ import com.shixiaoyu.xiangyueproject.mapper.ChatSessionMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.amqp.rabbit.annotation.*;
+import org.springframework.amqp.rabbit.annotation.Exchange;
+import org.springframework.amqp.rabbit.annotation.Queue;
+import org.springframework.amqp.rabbit.annotation.QueueBinding;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -42,63 +49,85 @@ public class ChatQueueConsumer {
     private final ChatMessageMapper chatMessageMapper;
     private final ChatSessionMapper chatSessionMapper;
     private final ChatClient qwenFlashClient;
+    private final TransactionTemplate transactionTemplate;
 
-    /**
-     * 处理AI聊天相关存储落库逻辑
-     */
     @RabbitHandler
     public void solveChatMemory(Map<String, String> map) {
         long sessionId = Long.parseLong(map.get("sid"));
         long userId = Long.parseLong(map.get("uid"));
         String content = map.get("content");
         String aiRes = map.get("aiRes");
-        //生成redis键
+        List<String> mediaUrls = parseMediaUrls(map.get("mediaUrls"));
         String key = AI_CHAT_SESSION_PREFIX + sessionId;
-        //如果是第一次对话，需要修改会话简述
-        //根据会话id查出该会话是否存在，存在则判断是否是第一次
-        LambdaQueryWrapper<ChatMessage> chatMessageLambdaQueryWrapper = new LambdaQueryWrapper<ChatMessage>().eq(ChatMessage::getSessionId, sessionId);
-        List<ChatMessage> chatMessage = chatMessageMapper.selectList(chatMessageLambdaQueryWrapper);
-        String summary;
-        if (chatMessage.isEmpty()) {
-            summary = qwenFlashClient
+
+        List<ChatMessage> exists = chatMessageMapper.selectList(
+                new LambdaQueryWrapper<ChatMessage>().eq(ChatMessage::getSessionId, sessionId));
+        final String sessionSummary;
+        if (exists.isEmpty()) {
+            String userPart = content;
+            if (mediaUrls != null && !mediaUrls.isEmpty()) {
+                userPart = content + "（附带" + mediaUrls.size() + "张图片）";
+            }
+            sessionSummary = qwenFlashClient
                     .prompt()
                     .system(SUMMARIES_MESSAGES)
-                    .user("用户问题：" + content + "\nAI回答：" + aiRes)
+                    .user("用户问题：" + userPart + "\nAI回答：" + aiRes)
                     .call()
                     .content();
-            LambdaUpdateWrapper<ChatSession> chatSessionLambdaUpdateWrapper = new LambdaUpdateWrapper<ChatSession>()
-                    .eq(ChatSession::getId, sessionId)
-                    .eq(ChatSession::getUserId, userId)
-                    .set(ChatSession::getSimpleDesc, summary);
-            chatSessionMapper.update(chatSessionLambdaUpdateWrapper);
-            //是第一次对话就需要在redis里面插入一条问候语
-            ChatMessage helloMessage = messageSetting(ChatMessageRoleEnum.ASSISTANT, sessionId, userId, AI_HELLO);
-            stringRedisTemplate.opsForList().rightPush(key,JSONUtil.toJsonStr(helloMessage));
-            stringRedisTemplate.expire(key,AI_CHAT_SESSION_TTL, TimeUnit.HOURS);
+            ChatMessage helloMessage = messageSetting(ChatMessageRoleEnum.ASSISTANT, sessionId, userId, AI_HELLO, null);
+            stringRedisTemplate.opsForList().rightPush(key, JSONUtil.toJsonStr(helloMessage));
+            stringRedisTemplate.expire(key, AI_CHAT_SESSION_TTL, TimeUnit.HOURS);
+        } else {
+            sessionSummary = null;
         }
 
-        //存库
-        ChatMessage userMessage = messageSetting(ChatMessageRoleEnum.USER, sessionId, userId, content);
-        chatMessageMapper.insert(userMessage);
-        ChatMessage aiMessage = messageSetting(ChatMessageRoleEnum.ASSISTANT, sessionId, userId, aiRes);
-        chatMessageMapper.insert(aiMessage);
-        //更新会话时间
-        LambdaUpdateWrapper<ChatSession> sessionWrapper = new LambdaUpdateWrapper<ChatSession>()
-                .eq(ChatSession::getUserId, userId)
-                .eq(ChatSession::getId, sessionId).set(ChatSession::getUpdateTime, LocalDateTime.now());
-        chatSessionMapper.update(sessionWrapper);
-        //更新redis数据
-        stringRedisTemplate.opsForList().rightPushAll(key, JSONUtil.toJsonStr(userMessage), JSONUtil.toJsonStr(aiMessage));
-        stringRedisTemplate.expire(key,AI_CHAT_SESSION_TTL, TimeUnit.HOURS);
+        List<ChatMessage> saved = transactionTemplate.execute(status -> {
+            if (StrUtil.isNotBlank(sessionSummary)) {
+                chatSessionMapper.update(new LambdaUpdateWrapper<ChatSession>()
+                        .eq(ChatSession::getId, sessionId)
+                        .eq(ChatSession::getUserId, userId)
+                        .set(ChatSession::getSimpleDesc, sessionSummary));
+            }
+            ChatMessage userMessage = messageSetting(ChatMessageRoleEnum.USER, sessionId, userId, content, mediaUrls);
+            chatMessageMapper.insert(userMessage);
+            ChatMessage aiMessage = messageSetting(ChatMessageRoleEnum.ASSISTANT, sessionId, userId, aiRes, null);
+            chatMessageMapper.insert(aiMessage);
+            chatSessionMapper.update(new LambdaUpdateWrapper<ChatSession>()
+                    .eq(ChatSession::getUserId, userId)
+                    .eq(ChatSession::getId, sessionId)
+                    .set(ChatSession::getUpdateTime, LocalDateTime.now()));
+            return List.of(userMessage, aiMessage);
+        });
+
+        if (saved != null) {
+            stringRedisTemplate.opsForList().rightPushAll(key,
+                    JSONUtil.toJsonStr(saved.get(0)), JSONUtil.toJsonStr(saved.get(1)));
+            stringRedisTemplate.expire(key, AI_CHAT_SESSION_TTL, TimeUnit.HOURS);
+        }
     }
 
-    //配置聊天消息
-    private ChatMessage messageSetting(ChatMessageRoleEnum roleEnum, Long sessionId, Long userId, String content) {
+    private List<String> parseMediaUrls(String json) {
+        if (StrUtil.isBlank(json) || "null".equals(json) || "[]".equals(json)) {
+            return Collections.emptyList();
+        }
+        try {
+            return JSONUtil.toList(json, String.class);
+        } catch (Exception e) {
+            log.warn("解析 mediaUrls 失败: {}", json, e);
+            return Collections.emptyList();
+        }
+    }
+
+    private ChatMessage messageSetting(ChatMessageRoleEnum roleEnum, Long sessionId, Long userId,
+                                       String content, List<String> mediaUrls) {
         ChatMessage chatMessage = new ChatMessage();
         chatMessage.setContent(content);
         chatMessage.setRole(roleEnum);
         chatMessage.setSessionId(sessionId);
         chatMessage.setUserId(userId);
+        if (mediaUrls != null && !mediaUrls.isEmpty()) {
+            chatMessage.setMediaUrls(mediaUrls);
+        }
         return chatMessage;
     }
 }

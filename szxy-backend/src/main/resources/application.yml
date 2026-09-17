@@ -15,7 +15,7 @@ spring:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       chat:
         options:
-          model: qwen3.7-flash
+          model: qwen3.8-flash
       embedding:
         options:
           model: qwen3.7-text-embedding
@@ -100,10 +100,24 @@ auth:
     - /swagger-ui/**
     - /favicon.ico
     - /error
+  # 可选登录路径（游客可访问；有 token 则识别身份，无 token 也放行）
+  optional-path:
+    - /sc/top10
+    - /sc/detail
+    - /sc/sccomments
+    - /vlg/ls
+    - /vlg/detail
+    - /vlg/likes
+    - /vlg/collections
+    - /ur/search
+    - /product/**
+    - /pos/getPos
+    - /pos/report
+    - /ai/chat/anonymous
+    - /upload
   # 需要管理端权限（role=4）的路径，由 AdminInterceptor 统一拦截
   admin-path:
     - /report/**
-    - /sys/**
 
 aliyun:
   accessKeyId: ${aliyun.key-id}

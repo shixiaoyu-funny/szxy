@@ -59,12 +59,24 @@ const router = createRouter({
           meta: { title: '村长审批' }
         },
         {
+          path: 'users',
+          name: 'users',
+          component: () => import('../views/User.vue'),
+          meta: { title: '用户管理' }
+        },
+        {
           path: 'profile',
           name: 'profile',
           component: () => import('../views/Profile.vue'),
           meta: { title: '个人中心' }
         }
       ]
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'notFound',
+      component: () => import('../views/NotFound.vue'),
+      meta: { title: '页面不存在', requiresAuth: false }
     }
   ],
 })

@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -47,6 +48,12 @@ public class User {
 
     @Schema(description = "账号状态：0-禁用、1-正常")
     private Integer status;
+
+    @Schema(description = "账户余额（元）")
+    private BigDecimal balance;
+
+    @Schema(description = "是否根据位置变化自动推荐：0关 1开")
+    private Integer openPosAlter;
 
     @TableField(fill = FieldFill.INSERT)
     @Schema(description = "创建时间（自动填充）")

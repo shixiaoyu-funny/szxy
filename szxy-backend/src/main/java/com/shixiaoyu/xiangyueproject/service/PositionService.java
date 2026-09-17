@@ -1,5 +1,6 @@
 package com.shixiaoyu.xiangyueproject.service;
 
+import com.shixiaoyu.xiangyueproject.entity.dto.PosReportDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.PositionDTO;
 import com.shixiaoyu.xiangyueproject.entity.vo.PositionVO;
 
@@ -20,4 +21,9 @@ public interface PositionService {
      * value 格式与高德 location 一致：经度,纬度
      */
     void savePos(PositionDTO dto);
+
+    /**
+     * 登录用户上报当前定位：与 Redis 上次位置比对，变更时按开关投递推荐 MQ。
+     */
+    void reportPos(PosReportDTO dto);
 }

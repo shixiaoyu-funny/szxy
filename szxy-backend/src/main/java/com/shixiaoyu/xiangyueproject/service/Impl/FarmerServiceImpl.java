@@ -20,6 +20,7 @@ import com.shixiaoyu.xiangyueproject.mapper.ScenicMapper;
 import com.shixiaoyu.xiangyueproject.mapper.UserMapper;
 import com.shixiaoyu.xiangyueproject.mapper.VillageMapper;
 import com.shixiaoyu.xiangyueproject.service.FarmerService;
+import com.shixiaoyu.xiangyueproject.service.support.ScenicVoFiller;
 import com.shixiaoyu.xiangyueproject.utils.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,7 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
     private final UserMapper userMapper;
     private final VillageMapper villageMapper;
     private final ScenicMapper scenicMapper;
+    private final ScenicVoFiller scenicVoFiller;
 
     /**
      * 本村农户列表：校验村长身份后按村查询并组装 VO
@@ -171,6 +173,7 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
         List<ScenicVO> voList = scenics.stream().map(s -> BeanUtil.copyProperties(s, ScenicVO.class))
                 .collect(Collectors.toList());
         fillScenicVillageNames(voList);
+        scenicVoFiller.fillTicketPrice(voList);
         return voList;
     }
 
@@ -293,11 +296,14 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
         userMapper.updateById(promote);
     }
 
-    // farm_user 列表 + 批量查 user / village，组装 VO
+    /**
+     * 农户档案列表转 VO：批量查 user 账号 + 村落名称后组装
+     */
     private List<FarmerUserVO> toFarmerVos(List<FarmerUser> farmers) {
         if (farmers == null || farmers.isEmpty()) {
             return List.of();
         }
+        // 1. 收集 userId，批量查登录账号
         Set<Long> userIds = farmers.stream()
                 .map(FarmerUser::getUserId)
                 .filter(Objects::nonNull)
@@ -307,7 +313,7 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
                 : userMapper.selectByIds(userIds).stream()
                 .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
 
-        // 批量填充村落名称
+        // 2. 收集 villageId，批量查村名
         Set<Long> villageIds = farmers.stream()
                 .map(FarmerUser::getVillageId)
                 .filter(Objects::nonNull)
@@ -317,6 +323,7 @@ public class FarmerServiceImpl extends ServiceImpl<FarmerMapper, FarmerUser> imp
                 : villageMapper.selectByIds(villageIds).stream()
                 .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
 
+        // 3. 逐条组装 VO
         return farmers.stream().map(fu -> {
             FarmerUserVO vo = BeanUtil.copyProperties(fu, FarmerUserVO.class);
             User u = userMap.get(fu.getUserId());

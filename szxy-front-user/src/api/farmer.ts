@@ -31,24 +31,3 @@ export const getMyVillage = () => {
 export const getMyScenics = () => {
   return axios.get('/fmr/sc');
 };
-
-// ===== 管理端 =====
-
-// 全部农户列表
-export const adminGetAllFarmers = () => {
-  return axios.get('/fmr/all');
-};
-
-// 建档农户（任意村，默认密码 123456）
-export const adminCreateFarmer = (villageId: number, data: any) => {
-  return axios.post('/fmr/create', data, {
-    params: { villageId }
-  });
-};
-
-// 任命/更换村长
-export const adminSetManager = (villageId: number, farmerUserId: number) => {
-  return axios.post('/fmr/set-manager', null, {
-    params: { villageId, farmerUserId }
-  });
-};

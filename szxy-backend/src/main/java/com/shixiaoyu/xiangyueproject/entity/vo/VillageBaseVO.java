@@ -32,7 +32,7 @@ public class VillageBaseVO {
     @Schema(description = "所属区县")
     private String county;
 
-    @Schema(description = "村落特色类型：1古村落 2生态村 3民俗村 4文旅村")
+    @Schema(description = "村落特色类型：1古建聚落 2非遗民俗 3山水生态 4农业观光 5近郊休闲 6康养度假 7红色研学 8滨水渔乡 9民族村寨 10综合文旅")
     private VillageTypeEnum type;
 
     @Schema(description = "村落详细介绍")
@@ -49,6 +49,9 @@ public class VillageBaseVO {
 
     @Schema(description = "联系方式")
     private String contact;
+
+    @Schema(description = "村长用户ID")
+    private Long manageId;
 
     @Schema(description = "总点赞量（下属景点之和）")
     private Integer likes;

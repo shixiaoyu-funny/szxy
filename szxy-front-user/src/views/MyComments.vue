@@ -84,7 +84,7 @@ const fetchComments = async () => {
   error.value = '';
   try {
     const res = await getComments();
-    console.log(res.data);
+    // 加载评论
     if (res.data) {
       comments.value = res.data;
       await preloadImages(collectImageUrlsFromItems(comments.value));

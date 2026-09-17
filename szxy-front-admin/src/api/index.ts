@@ -71,7 +71,15 @@ export const loginApi = {
 /** 用户（`/ur`） */
 export const userApi = {
   getInfo: (): Promise<Record<string, unknown>> => service.get('/ur/info'),
-  infoSet: (data: Record<string, unknown>): Promise<unknown> => service.post('/ur/infoset', data)
+  infoSet: (data: Record<string, unknown>): Promise<unknown> => service.post('/ur/infoset', data),
+  /** 管理端分页查询用户 */
+  list: (params: {
+    pageNo: number;
+    pageSize: number;
+    keyword?: string;
+    role?: number;
+    status?: number;
+  }): Promise<{ total: number; data: unknown[] }> => service.get('/ur/ls', { params })
 };
 
 /** 景点管理（`/sc`，Service 层 requireAdmin 校验 role=4） */

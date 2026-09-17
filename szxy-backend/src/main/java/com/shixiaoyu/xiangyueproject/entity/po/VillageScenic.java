@@ -41,9 +41,6 @@ public class VillageScenic {
     @Schema(description = "景区封面图片URL（多张用逗号分隔）")
     private String image;
 
-    @Schema(description = "景区门票价格（单位：元，0表示免费）")
-    private Integer price;
-
     @Schema(description = "景区类型：1自然景观 2人文景观 3娱乐体验 4民俗体验")
     private ScenicTypeEnum type;
 

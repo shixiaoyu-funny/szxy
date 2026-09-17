@@ -17,24 +17,22 @@ import static com.shixiaoyu.xiangyueproject.constants.PromptConstants.*;
 public class AIConfiguration {
     private final ChatClient.Builder builder;
     /**
-     * 默认 qwen3.7-flash 模型。
+     * 默认 qwen3.8-flash（原生多模态：文本 + 图片/视频理解）。
      */
     @Bean
     @Primary
     public ChatClient qwenFlashClient() {
         return builder
                 .defaultSystem(fullSystemPrompt())
-//                .defaultTools(commonTool,userInfoTool,webSearchTool)
                 .build();
     }
 
-    @Bean
-    public ChatClient qwenPlusClient() {
-        return builder
-                .defaultSystem(fullSystemPrompt())
-//                .defaultTools(commonTool,userInfoTool,webSearchTool)
-                .build();
-    }
+//    @Bean
+//    public ChatClient qwenPlusClient() {
+//        return builder
+//                .defaultSystem(fullSystemPrompt())
+//                .build();
+//    }
 
     /**
      * AI工具日志打印方法

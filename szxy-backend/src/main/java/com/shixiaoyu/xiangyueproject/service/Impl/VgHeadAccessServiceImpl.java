@@ -343,16 +343,19 @@ public class VgHeadAccessServiceImpl extends ServiceImpl<VgHeadAccessMapper, VgH
     // 换村长：旧村长降农户，新用户升村长，写 manage_id
     private void transferVillageHead(VillageBase village, Long newChiefUserId) {
         Long oldChiefId = village.getManageId();
+        // 1. 旧村长存在且不是同一人 → 降为农户
         if (oldChiefId != null && !oldChiefId.equals(newChiefUserId)) {
             User old = new User();
             old.setId(oldChiefId);
             old.setRole(RoleEnum.FARMER);
             userMapper.updateById(old);
         }
+        // 2. 新村长升 role=3
         User promote = new User();
         promote.setId(newChiefUserId);
         promote.setRole(RoleEnum.CHIEF);
         userMapper.updateById(promote);
+        // 3. 村落 manage_id 指向新村长
         village.setManageId(newChiefUserId);
         villageMapper.updateById(village);
     }
@@ -375,24 +378,32 @@ public class VgHeadAccessServiceImpl extends ServiceImpl<VgHeadAccessMapper, VgH
         vgHeadAccessMapper.updateById(update);
     }
 
+    /**
+     * 批量转 VO：关联农户档案、用户账号、村落名称（避免 N+1）
+     */
     private List<VgHeadAccessVO> toVoList(List<VgHeadAccess> list) {
         if (list == null || list.isEmpty()) {
             return Collections.emptyList();
         }
+        // 1. 收集本页所有农户档案 ID、村落 ID
         Set<Long> fuIds = list.stream().map(VgHeadAccess::getFuId).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<Long> villageIds = list.stream().map(VgHeadAccess::getVillageId).filter(Objects::nonNull).collect(Collectors.toSet());
 
+        // 2. 批量查农户档案 → fuId → FarmerUser
         Map<Long, FarmerUser> fuMap = fuIds.isEmpty() ? Map.of()
                 : farmerMapper.selectByIds(fuIds).stream()
                 .collect(Collectors.toMap(FarmerUser::getId, f -> f, (a, b) -> a));
+        // 3. 从档案里再收集 userId，批量查用户账号
         Set<Long> userIds = fuMap.values().stream().map(FarmerUser::getUserId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, User> userMap = userIds.isEmpty() ? Map.of()
                 : userMapper.selectByIds(userIds).stream()
                 .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+        // 4. 批量查村落名称
         Map<Long, String> villageNameMap = villageIds.isEmpty() ? Map.of()
                 : villageMapper.selectByIds(villageIds).stream()
                 .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
 
+        // 5. 逐条组装 VO：基础字段 + 村名 + 申请人信息
         return list.stream().map(a -> {
             VgHeadAccessVO vo = BeanUtil.copyProperties(a, VgHeadAccessVO.class);
             vo.setVillageName(villageNameMap.get(a.getVillageId()));
@@ -410,6 +421,7 @@ public class VgHeadAccessServiceImpl extends ServiceImpl<VgHeadAccessMapper, VgH
         }).collect(Collectors.toList());
     }
 
+    /** 单条转 VO */
     private VgHeadAccessVO toVo(VgHeadAccess access) {
         return toVoList(List.of(access)).get(0);
     }

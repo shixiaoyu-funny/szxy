@@ -1,5 +1,6 @@
 package com.shixiaoyu.xiangyueproject.controller;
 
+import com.shixiaoyu.xiangyueproject.entity.dto.PosReportDTO;
 import com.shixiaoyu.xiangyueproject.entity.dto.PositionDTO;
 import com.shixiaoyu.xiangyueproject.entity.result.Result;
 import com.shixiaoyu.xiangyueproject.entity.vo.PositionVO;
@@ -17,8 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 省市区经纬度缓存接口（仅 Redis，不直接调高德）。
- * 前端流程：getPos → 未命中则调高德 → savePos 回写缓存。
+ * 省市区经纬度缓存 + 用户定位上报。
  */
 @Slf4j
 @RestController
@@ -50,6 +50,13 @@ public class PositionController {
     @PostMapping("/savePos")
     public Result<Void> savePos(@RequestBody PositionDTO dto) {
         positionService.savePos(dto);
+        return Result.ok();
+    }
+
+    @Operation(summary = "上报当前用户定位（登录后，与 Redis 比对变更）")
+    @PostMapping("/report")
+    public Result<Void> report(@RequestBody PosReportDTO dto) {
+        positionService.reportPos(dto);
         return Result.ok();
     }
 }

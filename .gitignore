@@ -25,6 +25,8 @@ node_modules/
 **/*.local.yml
 **/*.local.properties
 **/.env
+**/.env.local
+**/.env.*.local
 
 ### OS ###
 .DS_Store
@@ -54,3 +56,10 @@ replay_pid*
 *.zip
 *.tar.gz
 *.rar
+
+### Python ###
+*.pyc
+*.pyd
+*.pyo
+__pycache__/
+szxy-venv/

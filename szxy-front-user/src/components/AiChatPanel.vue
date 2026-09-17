@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useUserStore } from '../stores/user';
 import ChatMessage from './chat/ChatMessage.vue';
 import ChatInput from './chat/ChatInput.vue';
@@ -10,6 +10,8 @@ import {
   getSessionsByUid,
   getChatsBySid,
   sendChat,
+  sendChatAnonymous,
+  renameSession,
   type ChatMessageVO,
   type ChatSessionVO,
 } from '../api/ai';
@@ -18,6 +20,7 @@ import { getErrorMessage } from '../api/axios';
 interface Msg {
   role: 'user' | 'assistant';
   content: string;
+  mediaUrls?: string[];
   time?: string;
 }
 
@@ -60,6 +63,7 @@ const mapMessages = (list: ChatMessageVO[]): Msg[] =>
   list.map((m) => ({
     role: roleOf(m.role),
     content: m.content,
+    mediaUrls: m.mediaUrls || undefined,
     time: m.createTime,
   }));
 
@@ -116,7 +120,7 @@ const switchSession = async (sid: number) => {
 
 const handleNewChat = async () => {
   if (!userStore.isLoggedIn) {
-    router.push('/login');
+    requireLogin();
     return;
   }
   try {
@@ -137,20 +141,47 @@ const handleNewChat = async () => {
   }
 };
 
-const handleSend = async (text: string) => {
-  if (!userStore.isLoggedIn) {
-    router.push('/login');
-    return;
-  }
-  if (!sessionId.value || sending.value) return;
+const requireLogin = () => {
+  ElMessage.info('登录注册后才能体验完整功能哦');
+  router.push('/login');
+};
+
+const buildAnonymousHistory = () => {
+  // 去掉刚 push 进列表的当前用户消息，取最近 20 条作为上下文
+  const recent = messages.value.slice(0, -1).slice(-20);
+  return recent.map((m) => ({
+    role: m.role === 'user' ? 1 : 2,
+    content: m.content || '',
+    mediaUrls: m.mediaUrls || undefined,
+  }));
+};
+
+const handleSend = async (payload: { text: string; mediaUrls: string[] }) => {
+  if (sending.value) return;
+  const text = payload.text?.trim() || '';
+  const mediaUrls = payload.mediaUrls || [];
+  if (!text && !mediaUrls.length) return;
 
   const now = new Date().toISOString();
-  messages.value.push({ role: 'user', content: text, time: now });
+  messages.value.push({
+    role: 'user',
+    content: text || (mediaUrls.length ? '（图片）' : ''),
+    mediaUrls: mediaUrls.length ? mediaUrls : undefined,
+    time: now,
+  });
   await scrollBottom();
   sending.value = true;
 
   try {
-    const res = await sendChat(sessionId.value, text);
+    if (!userStore.isLoggedIn) {
+      const res = await sendChatAnonymous({ content: text, mediaUrls, history: buildAnonymousHistory() });
+      const reply = (res as { data?: string }).data ?? '';
+      messages.value.push({ role: 'assistant', content: reply, time: new Date().toISOString() });
+      await scrollBottom();
+      return;
+    }
+    if (!sessionId.value) return;
+    const res = await sendChat(sessionId.value, { content: text, mediaUrls });
     const reply = (res as { data?: string }).data ?? '';
     messages.value.push({ role: 'assistant', content: reply, time: new Date().toISOString() });
     await scrollBottom();
@@ -179,6 +210,61 @@ const formatSessionTime = (time?: string) => {
   return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
+const renaming = ref(false);
+
+/** Ctrl/Cmd + R：重命名当前选中会话（拦截浏览器刷新） */
+const openRenameDialog = async () => {
+  if (!userStore.isLoggedIn || renaming.value || sending.value) return;
+  const sid = sessionId.value;
+  if (sid == null) {
+    ElMessage.warning('请先选中一个会话');
+    return;
+  }
+  const current = sessions.value.find((s) => s.id === sid);
+  const oldName = current?.simpleDesc?.trim() || '新对话';
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新的会话名称', '修改会话名称', {
+      confirmButtonText: '保存',
+      cancelButtonText: '取消',
+      inputValue: oldName,
+      inputPlaceholder: '最多 64 个字符',
+      inputPattern: /\S+/,
+      inputErrorMessage: '会话名称不能为空',
+      customClass: 'session-rename-box',
+    });
+    const name = String(value ?? '').trim();
+    if (!name) {
+      ElMessage.warning('会话名称不能为空');
+      return;
+    }
+    if (name.length > 64) {
+      ElMessage.warning('会话名称最多 64 个字符');
+      return;
+    }
+    if (name === oldName) return;
+    renaming.value = true;
+    await renameSession(sid, name);
+    const target = sessions.value.find((s) => s.id === sid);
+    if (target) target.simpleDesc = name;
+    ElMessage.success('已修改会话名称');
+    await refreshSessions();
+  } catch (err) {
+    if (err === 'cancel' || err === 'close') return;
+    const msg = getErrorMessage(err);
+    if (msg) ElMessage.error(msg);
+  } finally {
+    renaming.value = false;
+  }
+};
+
+const onKeydownRename = (e: KeyboardEvent) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.key !== 'r' && e.key !== 'R') return;
+  if (!userStore.isLoggedIn || sessionId.value == null) return;
+  e.preventDefault();
+  void openRenameDialog();
+};
+
 const goLogin = () => router.push('/login');
 
 watch(
@@ -195,20 +281,22 @@ watch(
 
 onMounted(() => {
   if (userStore.isLoggedIn) initChat();
+  window.addEventListener('keydown', onKeydownRename);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydownRename);
 });
 </script>
 
 <template>
   <section class="ai-chat-panel">
-    <div v-if="!userStore.isLoggedIn" class="ai-chat-login">
-      <p>登录后即可与禾小智对话，获取景点与乡村游玩建议</p>
-      <button type="button" class="login-btn" @click="goLogin">去登录</button>
-    </div>
-
-    <div v-else class="ai-chat-layout">
+    <div class="ai-chat-layout">
       <div class="ai-chat-main">
         <header class="ai-chat-header">
-          <h2 class="session-title" :title="currentSessionTitle">{{ currentSessionTitle }}</h2>
+          <h2 class="session-title" :title="currentSessionTitle">
+            {{ userStore.isLoggedIn ? currentSessionTitle : '禾小智 · 游客模式' }}
+          </h2>
         </header>
 
         <div ref="container" class="ai-chat-messages" @scroll="onScroll">
@@ -225,6 +313,7 @@ onMounted(() => {
             :key="i"
             :role="m.role"
             :content="m.content"
+            :media-urls="m.mediaUrls"
             :time="m.time"
           />
           <div v-if="sending" class="typing-indicator">
@@ -238,11 +327,11 @@ onMounted(() => {
               <polyline points="6 9 12 15 18 9" />
             </svg>
           </button>
-          <ChatInput :disabled="initializing || sending || !sessionId" @send="handleSend" />
+          <ChatInput :disabled="initializing || sending || (userStore.isLoggedIn && !sessionId)" @send="handleSend" />
         </div>
       </div>
 
-      <aside class="ai-chat-sidebar">
+      <aside v-if="userStore.isLoggedIn" class="ai-chat-sidebar">
         <div class="sidebar-header">
           <span class="sidebar-title">历史会话</span>
           <button
@@ -262,6 +351,7 @@ onMounted(() => {
             :key="s.id"
             class="session-item"
             :class="{ active: s.id === sessionId }"
+            :title="'点击切换 · Ctrl+R 重命名'"
             @click="switchSession(s.id)"
           >
             <p class="session-desc">{{ s.simpleDesc || `会话 ${s.id}` }}</p>
@@ -270,6 +360,17 @@ onMounted(() => {
             </p>
           </li>
         </ul>
+      </aside>
+
+      <aside v-else class="ai-chat-sidebar ai-chat-sidebar-anon">
+        <div class="sidebar-header">
+          <span class="sidebar-title">历史会话</span>
+          <button type="button" class="new-chat-btn" title="新对话" @click="requireLogin">+</button>
+        </div>
+        <div class="anon-hint">
+          <p>登录后即可保存对话、创建新对话并浏览历史记录</p>
+          <button type="button" class="login-btn" @click="goLogin">登录 / 注册</button>
+        </div>
       </aside>
     </div>
   </section>
@@ -423,17 +524,27 @@ onMounted(() => {
   color: #909399;
 }
 
-.ai-chat-login {
-  height: 100%;
+.ai-chat-sidebar-anon {
+  align-items: center;
+  justify-content: center;
+}
+
+.anon-hint {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #909399;
-  font-size: 14px;
-  padding: 24px;
+  padding: 24px 20px;
   text-align: center;
+  flex: 1;
+  color: #909399;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.anon-hint p {
+  margin: 0;
 }
 
 .login-btn {

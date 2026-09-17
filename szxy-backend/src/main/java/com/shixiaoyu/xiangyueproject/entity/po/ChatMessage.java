@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.shixiaoyu.xiangyueproject.enums.ChatMessageRoleEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * AI 聊天消息（方案二：一条记录对应一轮 user 或 assistant 内容）
@@ -19,7 +21,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@TableName("chat_message")
+@TableName(value = "chat_message", autoResultMap = true)
 @Schema(title = "AI 聊天消息", description = "按 sessionId + createTime 排序加载多轮上下文")
 public class ChatMessage {
 
@@ -38,6 +40,14 @@ public class ChatMessage {
 
     @Schema(description = "消息正文")
     private String content;
+
+    /**
+     * 多模态图片 URL（公网可访问）；仅用户消息有意义。
+     * Spring AI UserMessage.media 使用 URI 传给兼容 OpenAI 的多模态模型。
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    @Schema(description = "用户上传图片URL列表")
+    private List<String> mediaUrls;
 
     @TableField(fill = FieldFill.INSERT)
     @Schema(description = "消息发送时间")

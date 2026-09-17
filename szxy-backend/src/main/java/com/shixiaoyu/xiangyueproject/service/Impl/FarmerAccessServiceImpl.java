@@ -300,12 +300,16 @@ public class FarmerAccessServiceImpl extends ServiceImpl<FarmerAccessMapper, Far
         return village == null ? null : village.getName();
     }
 
-    // 批量转 VO
+    /**
+     * 批量转 VO：解压 info 快照 + 批量查村落名
+     */
     private List<FarmerAccessVO> toVoList(List<FarmerAccess> records) {
         if (records == null || records.isEmpty()) {
             return Collections.emptyList();
         }
+        // 1. 把 info 字段 JSON 还原成 userCacheInfo 对象
         records.forEach(FarmerAccess::unpackInfo);
+        // 2. 收集村落 ID，一次 IN 查询拿村名
         Set<Long> villageIds = records.stream()
                 .map(FarmerAccess::getVillageId)
                 .filter(Objects::nonNull)
@@ -314,6 +318,7 @@ public class FarmerAccessServiceImpl extends ServiceImpl<FarmerAccessMapper, Far
                 ? Collections.emptyMap()
                 : villageMapper.selectByIds(villageIds).stream()
                 .collect(Collectors.toMap(VillageBase::getId, VillageBase::getName, (a, b) -> a));
+        // 3. 逐条转 VO 并挂上村名
         return records.stream()
                 .map(r -> toVo(r, nameMap.get(r.getVillageId())))
                 .collect(Collectors.toList());

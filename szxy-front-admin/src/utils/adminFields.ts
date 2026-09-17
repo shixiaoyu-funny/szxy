@@ -8,30 +8,46 @@ export function pick<T = unknown>(row: Record<string, unknown> | null | undefine
   return (a !== undefined && a !== null ? a : b) as T | undefined;
 }
 
-export function formatAuditStatus(status: unknown): { text: string; type: 'info' | 'success' | 'warning' | 'danger' } {
-  const s = Number(status);
-  if (s === 1) return { text: '已通过', type: 'success' };
-  if (s === 2) return { text: '已拒绝', type: 'danger' };
-  return { text: '待审核', type: 'warning' };
-}
-
-export function farmerRoleText(type: unknown): string {
-  const t = Number(type);
-  if (t === 2) return '村长';
-  if (t === 1) return '农户';
-  return t ? `类型${t}` : '—';
-}
-
 export function farmerApplyBizText(type: unknown): string {
   const t = Number(type);
   const m: Record<number, string> = { 1: '民宿经营者', 2: '农产品销售者', 3: '文旅服务者' };
   return m[t] || (t ? `类型${t}` : '—');
 }
 
+export const VILLAGE_TYPE_MAP: Record<number, string> = {
+  1: '古建聚落型',
+  2: '非遗民俗型',
+  3: '山水生态型',
+  4: '农业观光型',
+  5: '近郊休闲型',
+  6: '康养度假型',
+  7: '红色研学型',
+  8: '滨水渔乡型',
+  9: '民族村寨型',
+  10: '综合文旅型'
+};
+
+export const VILLAGE_TYPE_OPTIONS = Object.entries(VILLAGE_TYPE_MAP).map(([value, label]) => ({
+  value: Number(value),
+  label
+}));
+
 export function villageTypeText(type: unknown): string {
   const t = Number(type);
-  const m: Record<number, string> = { 1: '古村落', 2: '生态村', 3: '民俗村', 4: '文旅村' };
-  return m[t] || '—';
+  return VILLAGE_TYPE_MAP[t] || '—';
+}
+
+export function userRoleText(role: unknown): string {
+  const r = Number(role);
+  const m: Record<number, string> = { 1: '游客', 2: '农户', 3: '村长', 4: '管理员' };
+  return m[r] || (r ? `角色${r}` : '—');
+}
+
+export function userStatusText(status: unknown): { text: string; type: 'success' | 'danger' | 'info' } {
+  const s = Number(status);
+  if (s === 1) return { text: '正常', type: 'success' };
+  if (s === 0) return { text: '禁用', type: 'danger' };
+  return { text: s ? `状态${s}` : '—', type: 'info' };
 }
 
 export function scenicTypeText(type: unknown): string {

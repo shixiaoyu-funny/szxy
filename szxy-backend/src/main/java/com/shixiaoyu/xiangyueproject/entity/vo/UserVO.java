@@ -34,4 +34,7 @@ public class UserVO {
 
     @Schema(description = "账号状态：0禁用 1正常")
     private Integer status;
+
+    @Schema(description = "是否根据位置变化自动推荐：0关 1开")
+    private Integer openPosAlter;
 }

@@ -2,7 +2,9 @@ package com.shixiaoyu.xiangyueproject.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.shixiaoyu.xiangyueproject.entity.dto.UserCommentDTO;
+import com.shixiaoyu.xiangyueproject.entity.dto.UserQueryDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.User;
+import com.shixiaoyu.xiangyueproject.entity.vo.AdminUserVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.LikeReceivedVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.ScenicVO;
@@ -43,4 +45,7 @@ public interface UserService extends IService<User> {
     List<LikeReceivedVO> likesReceived();
 
     PageResultVO<ScenicVO> scenicSearch(String content, Integer pageNo, Integer pageSize);
+
+    /** 管理端分页查询用户 */
+    PageResultVO<AdminUserVO> adminList(UserQueryDTO queryDTO);
 }

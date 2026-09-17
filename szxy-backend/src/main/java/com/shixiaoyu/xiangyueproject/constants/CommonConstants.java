@@ -29,4 +29,21 @@ public class CommonConstants {
     /** RabbitMQ AI聊天异步存储交换机、队列、路由键 */
     public static final String CHAT_QUEUE_NAME = "direct.chat";
     public static final String CHAT_ROUTING_KEY = "chat.save";
+
+    /** 位置变更 → AI 推荐邮件 */
+    public static final String POS_ALTER_QUEUE_NAME = "direct.pos.alter";
+    public static final String POS_ALTER_ROUTING_KEY = "pos.alter";
+
+    /**
+     * 待支付订单超时取消：延迟队列（TTL 15 分钟）→ 死信 → 取消队列
+     * 下单成功后投递 orderId；到期若仍为待支付则自动取消
+     */
+    public static final String ORDER_PAY_DELAY_EXCHANGE = "szxy.order.pay.delay";
+    public static final String ORDER_PAY_DELAY_QUEUE = "order.pay.delay";
+    public static final String ORDER_PAY_DELAY_ROUTING_KEY = "order.pay.delay";
+    public static final String ORDER_PAY_CANCEL_EXCHANGE = "szxy.order.pay.cancel";
+    public static final String ORDER_PAY_CANCEL_QUEUE = "order.pay.cancel";
+    public static final String ORDER_PAY_CANCEL_ROUTING_KEY = "order.pay.cancel";
+    /** 支付超时毫秒数：15 分钟 */
+    public static final int ORDER_PAY_TIMEOUT_MS = 15 * 60 * 1000;
 }

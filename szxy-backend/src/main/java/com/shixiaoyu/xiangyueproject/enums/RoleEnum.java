@@ -42,4 +42,17 @@ public enum RoleEnum {
     public String getDesc() {
         return desc;
     }
+
+    /** 按数字 code 解析（查询参数 role=1/2/3/4） */
+    public static RoleEnum fromCode(Integer code) {
+        if (code == null) {
+            return null;
+        }
+        for (RoleEnum e : values()) {
+            if (e.code.equals(code)) {
+                return e;
+            }
+        }
+        throw new IllegalArgumentException("非法角色: " + code);
+    }
 }

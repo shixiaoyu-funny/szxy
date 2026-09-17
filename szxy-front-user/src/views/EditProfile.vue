@@ -95,7 +95,7 @@ const handleAvatarUpload = async (event: Event) => {
   try {
     if (!file) return;
     const res = await uploadFile(file as File);
-    console.log('上传返回:', res);
+    // 上传成功
 
     let imageUrl = '';
     if (typeof res === 'string') {

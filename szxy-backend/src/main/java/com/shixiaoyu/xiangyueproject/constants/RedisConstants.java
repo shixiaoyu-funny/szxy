@@ -63,6 +63,12 @@ public class RedisConstants {
     public static final String POS_PREFIX = "pos:";
 
     /**
+     * 用户上一次上报的 IP 定位（省|市|区）
+     * 完整 key：user:last:pos:{userId}
+     */
+    public static final String USER_LAST_POS_PREFIX = "user:last:pos:";
+
+    /**
      * ai会话相关缓存键
      */
     public static final String AI_CHAT_SESSION_PREFIX = "chat:session:";

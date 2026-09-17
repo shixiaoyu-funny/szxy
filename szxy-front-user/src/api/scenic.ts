@@ -21,27 +21,3 @@ export const getScComments = (id: number) => {
 export const registerScenic = (data: any) => {
   return axios.post('/sc/rg', data);
 };
-
-// 管理端：分页全部景点
-export const adminListScenic = (pageNo: number, pageSize: number) => {
-  return axios.get('/sc/ls', {
-    params: { pageNo, pageSize }
-  });
-};
-
-// 管理端：直接新增景点
-export const adminAddScenic = (villageId: number, data: any) => {
-  return axios.post('/sc/new', data, {
-    params: { villageId }
-  });
-};
-
-// 管理端：修改景点
-export const adminUpdateScenic = (id: number, data: any) => {
-  return axios.post(`/sc/modify/${id}`, data);
-};
-
-// 管理端：删除景点
-export const adminDeleteScenic = (id: number) => {
-  return axios.post(`/sc/del/${id}`);
-};

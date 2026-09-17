@@ -6,6 +6,7 @@ import com.shixiaoyu.xiangyueproject.entity.dto.VillageBaseDTO;
 import com.shixiaoyu.xiangyueproject.entity.po.VillageBase;
 import com.shixiaoyu.xiangyueproject.entity.vo.PageResultVO;
 import com.shixiaoyu.xiangyueproject.entity.vo.VillageBaseVO;
+import com.shixiaoyu.xiangyueproject.entity.vo.VillageDetailVO;
 
 import java.util.List;
 
@@ -15,6 +16,9 @@ import java.util.List;
 public interface VillageService extends IService<VillageBase> {
 
     PageResultVO<VillageBaseVO> villageList(PageResultDTO pageResultDTO);
+
+    /** 农村详情（含下属景点与聚合点赞/收藏） */
+    VillageDetailVO detail(Long id);
 
     void addVillage(VillageBaseDTO villageBaseDTO);
 

@@ -4,7 +4,6 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shixiaoyu.xiangyueproject.constants.CommonConstants;
 import com.shixiaoyu.xiangyueproject.constants.ErrorConstants;
 import com.shixiaoyu.xiangyueproject.constants.RedisConstants;
@@ -39,7 +38,6 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
     private final AmqpTemplate amqpTemplate;
     private final StringRedisTemplate stringRedisTemplate;
     private final UserMapper userMapper;
-    private final ObjectMapper objectMapper;
     private final TokenUtil tokenUtil;
 
     @Override
@@ -174,6 +172,13 @@ public class LoginServiceImpl extends ServiceImpl<UserMapper, User> implements L
         user.setPhone(userSetInfoDTO.getPhone());
         user.setEmail(userSetInfoDTO.getEmail());
         user.setAvatar(userSetInfoDTO.getAvatar());
+        if (userSetInfoDTO.getOpenPosAlter() != null) {
+            if (!Integer.valueOf(0).equals(userSetInfoDTO.getOpenPosAlter())
+                    && !Integer.valueOf(1).equals(userSetInfoDTO.getOpenPosAlter())) {
+                throw new BusinessException("位置推荐开关只能为 0 或 1");
+            }
+            user.setOpenPosAlter(userSetInfoDTO.getOpenPosAlter());
+        }
         userMapper.updateById(user);
     }
 

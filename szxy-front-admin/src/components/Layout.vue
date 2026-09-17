@@ -38,6 +38,10 @@
             <el-icon><UserFilled /></el-icon>
             <span>村长审批</span>
           </el-menu-item>
+          <el-menu-item index="/users">
+            <el-icon><Notebook /></el-icon>
+            <span>用户管理</span>
+          </el-menu-item>
           <el-menu-item index="/profile">
             <el-icon><Avatar /></el-icon>
             <span>个人中心</span>
@@ -102,7 +106,8 @@ import {
   SwitchButton,
   ArrowDown,
   Checked,
-  UserFilled
+  UserFilled,
+  Notebook
 } from '@element-plus/icons-vue';
 import { loginApi } from '../api';
 import store from '../store';
@@ -116,6 +121,7 @@ const activeMenu = computed(() => {
   if (p.startsWith('/village')) return '/village';
   if (p.startsWith('/farmer-access')) return '/farmer-access';
   if (p.startsWith('/vghead-access')) return '/vghead-access';
+  if (p.startsWith('/users')) return '/users';
   if (p.startsWith('/farmer')) return '/farmer';
   if (p.startsWith('/profile')) return '/profile';
   return '/';

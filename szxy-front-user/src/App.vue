@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElMessageBox } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   House,
   Location,
@@ -15,14 +15,24 @@ import {
   UserFilled,
   Key,
   Bell,
-  Checked
+  ShoppingCart,
+  Wallet,
+  List,
+  Sell,
+  Checked,
+  Setting
 } from '@element-plus/icons-vue';
 import { useUserStore } from './stores/user';
 import { getUserInfo } from './api/user';
+import { setUserInfo, logout as apiLogout } from './api/login';
+import SiteFooter from './components/SiteFooter.vue';
+import { useIpLocationPoll } from './composables/useIpLocationPoll';
+import { getErrorMessage } from './api/axios';
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const { locationText } = useIpLocationPoll();
 
 const showLayout = computed(() => route.path !== '/login');
 
@@ -42,16 +52,66 @@ const toggleAsideTheme = () => {
   asidePurple.value = !asidePurple.value;
 };
 
+/** 位置推荐设置 */
+const settingsVisible = ref(false);
+const openPosAlter = ref(false);
+const settingsSaving = ref(false);
+
+const openSettings = async () => {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录');
+    router.push('/login');
+    return;
+  }
+  settingsVisible.value = true;
+  try {
+    const res = await getUserInfo();
+    const info = (res as { data?: Record<string, unknown> }).data;
+    if (info) {
+      userStore.setUserInfo(info);
+      openPosAlter.value = Number(info.openPosAlter) === 1;
+    } else {
+      openPosAlter.value = Number((userStore.userInfo as Record<string, unknown>)?.openPosAlter) === 1;
+    }
+  } catch (e) {
+    openPosAlter.value = Number((userStore.userInfo as Record<string, unknown>)?.openPosAlter) === 1;
+    const msg = getErrorMessage(e);
+    if (msg) ElMessage.error(msg);
+  }
+};
+
+const onTogglePosAlter = async (val: string | number | boolean) => {
+  const enabled = Boolean(val);
+  openPosAlter.value = enabled;
+  settingsSaving.value = true;
+  try {
+    await setUserInfo({ openPosAlter: enabled ? 1 : 0 });
+    const next = { ...(userStore.userInfo || {}), openPosAlter: enabled ? 1 : 0 };
+    userStore.setUserInfo(next);
+    ElMessage.success(enabled ? '已开启位置变化推荐' : '已关闭位置变化推荐');
+  } catch (e) {
+    openPosAlter.value = !enabled;
+    const msg = getErrorMessage(e);
+    ElMessage.error(msg || '保存失败');
+  } finally {
+    settingsSaving.value = false;
+  }
+};
+
 const activeMenu = computed(() => {
   if (route.path.startsWith('/village')) return '/village';
   if (route.path.startsWith('/ai')) return '/ai';
+  if (route.path.startsWith('/cart') || route.path.startsWith('/order/confirm')) return '/cart';
+  if (route.path.startsWith('/orders')) return '/orders';
+  if (route.path.startsWith('/wallet')) return '/wallet';
   if (
     route.path.startsWith('/my-collections') ||
     route.path.startsWith('/my-likes') ||
     route.path.startsWith('/my-comments') ||
     route.path.startsWith('/profile') ||
     route.path.startsWith('/edit') ||
-    route.path.startsWith('/apply-farmer')
+    route.path.startsWith('/apply-farmer') ||
+    route.path.startsWith('/address')
   ) {
     return '/profile';
   }
@@ -59,6 +119,7 @@ const activeMenu = computed(() => {
   if (route.path.startsWith('/farmer/village')) return '/farmer/village';
   if (route.path.startsWith('/farmer/scenic')) return '/farmer/scenics';
   if (route.path.startsWith('/farmer/farmers')) return '/farmer/farmers';
+  if (route.path.startsWith('/farmer/orders')) return '/farmer/orders';
   if (route.path.startsWith('/farmer/vghead')) return '/farmer/vghead';
   if (route.path.startsWith('/about')) return '/about';
   return '/';
@@ -76,7 +137,11 @@ const showBack = computed(() => {
     p.startsWith('/messages') ||
     p.startsWith('/edit') ||
     p.startsWith('/apply-farmer') ||
-    p.startsWith('/farmer/')
+    p.startsWith('/farmer/') ||
+    p.startsWith('/cart') ||
+    p.startsWith('/address') ||
+    p.startsWith('/order') ||
+    p.startsWith('/wallet')
   );
 });
 
@@ -93,6 +158,11 @@ const handleLogout = async () => {
       type: 'warning',
       customClass: 'logout-confirm'
     });
+    try {
+      await apiLogout();
+    } catch (e) {
+      console.error('退出登录接口调用失败:', e);
+    }
     userStore.logout();
     router.push('/login');
   } catch {
@@ -134,6 +204,7 @@ watch(showAiEntry, (allowed) => {
           <p class="brand-sub">AI 驱动乡村振兴服务平台</p>
         </div>
         <el-menu
+          :key="activeMenu"
           :default-active="activeMenu"
           router
           class="aside-menu"
@@ -157,6 +228,18 @@ watch(showAiEntry, (allowed) => {
             <el-icon><Bell /></el-icon>
             <span>消息</span>
           </el-menu-item>
+          <el-menu-item v-if="userStore.isLoggedIn" index="/cart">
+            <el-icon><ShoppingCart /></el-icon>
+            <span>购物车</span>
+          </el-menu-item>
+          <el-menu-item v-if="userStore.isLoggedIn" index="/orders">
+            <el-icon><List /></el-icon>
+            <span>我的订单</span>
+          </el-menu-item>
+          <el-menu-item v-if="userStore.isLoggedIn" index="/wallet">
+            <el-icon><Wallet /></el-icon>
+            <span>我的钱包</span>
+          </el-menu-item>
           <el-menu-item v-if="isFarmerOrChief" index="/farmer/village">
             <el-icon><OfficeBuilding /></el-icon>
             <span>本村详情</span>
@@ -164,6 +247,10 @@ watch(showAiEntry, (allowed) => {
           <el-menu-item v-if="isFarmerOrChief" index="/farmer/scenics">
             <el-icon><Picture /></el-icon>
             <span>我的景点</span>
+          </el-menu-item>
+          <el-menu-item v-if="isFarmerOrChief" index="/farmer/orders">
+            <el-icon><Sell /></el-icon>
+            <span>卖家订单</span>
           </el-menu-item>
           <el-menu-item v-if="isChief" index="/farmer/farmers">
             <el-icon><UserFilled /></el-icon>
@@ -195,6 +282,17 @@ watch(showAiEntry, (allowed) => {
           </el-button>
           <span class="header-title">{{ pageTitle }}</span>
           <div class="header-actions">
+            <span class="header-location" :title="locationText">
+              <el-icon class="header-location-icon"><Location /></el-icon>
+              <span class="header-location-text">{{ locationText }}</span>
+            </span>
+            <button
+              class="settings-btn"
+              title="设置"
+              @click="openSettings"
+            >
+              <el-icon :size="18"><Setting /></el-icon>
+            </button>
             <button
               class="light-btn"
               :class="{ active: asidePurple }"
@@ -215,6 +313,27 @@ watch(showAiEntry, (allowed) => {
           </div>
         </el-header>
 
+        <el-dialog
+          v-model="settingsVisible"
+          title="设置"
+          width="420px"
+          append-to-body
+          class="pos-settings-dialog"
+        >
+          <div class="settings-row">
+            <div class="settings-text">
+              <p class="settings-label">位置变化时 AI 邮件推荐</p>
+              <p class="settings-hint">开启后，检测到您所在区县变化时，将根据平台数据推荐当地景点与特产到邮箱</p>
+            </div>
+            <el-switch
+              :model-value="openPosAlter"
+              :loading="settingsSaving"
+              :disabled="settingsSaving"
+              @change="onTogglePosAlter"
+            />
+          </div>
+        </el-dialog>
+
         <el-main class="layout-main" :class="{ 'is-login': !showLayout }">
           <div id="page-loading-host" class="layout-main-overlay-host" aria-hidden="true" />
           <div class="layout-main-body">
@@ -230,7 +349,7 @@ watch(showAiEntry, (allowed) => {
         </el-main>
 
         <el-footer v-if="showLayout" class="layout-footer">
-          数智乡约 · AI 驱动乡村振兴服务平台
+          <SiteFooter />
         </el-footer>
       </el-container>
     </el-container>
@@ -351,6 +470,78 @@ watch(showAiEntry, (allowed) => {
   z-index: 201;
 }
 
+.header-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 0 10px;
+  height: 32px;
+  border-radius: 16px;
+  background: #f0f7e8;
+  color: #558B2F;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.header-location-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.header-location-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f0f7e8;
+  color: #558B2F;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.settings-btn:hover {
+  background: linear-gradient(135deg, #8BC34A 0%, #66BB6A 100%);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.settings-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.settings-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-label {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.settings-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #888;
+}
+
 .logout-btn {
   display: inline-flex;
   align-items: center;
@@ -432,14 +623,9 @@ watch(showAiEntry, (allowed) => {
 }
 
 .layout-footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  background: #fff;
-  color: #909399;
-  font-size: 13px;
-  transition: background 0.45s ease, color 0.45s ease;
+  height: auto;
+  padding: 0;
+  transition: background 0.45s ease;
 }
 
 /* 深色主题：顶栏黑灰、内容区纯黑 */
@@ -453,13 +639,32 @@ watch(showAiEntry, (allowed) => {
   color: #e8e8ea;
 }
 
+.common-layout.is-dark .header-location {
+  background: rgba(139, 195, 74, 0.15);
+  color: #aed581;
+}
+
+.common-layout.is-dark .settings-btn {
+  background: rgba(139, 195, 74, 0.15);
+  color: #aed581;
+}
+
 .common-layout.is-dark .layout-main {
   background: #000;
 }
 
-.common-layout.is-dark .layout-footer {
+.common-layout.is-dark .layout-footer :deep(.site-footer) {
   background: #141416;
+  border-top-color: #2c2c2e;
   color: #8e8e93;
+}
+
+.common-layout.is-dark .layout-footer :deep(.footer-copy) {
+  color: #aeaeb2;
+}
+
+.common-layout.is-dark .layout-footer :deep(.footer-link) {
+  color: #8bc34a;
 }
 
 .fade-enter-active,
