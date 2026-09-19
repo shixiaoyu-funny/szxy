@@ -63,3 +63,6 @@ replay_pid*
 *.pyo
 __pycache__/
 szxy-venv/
+
+### Database dump (privacy: contains seed accounts/phone numbers) ###
+szxy-backend/src/main/resources/db/*.sql
